@@ -240,7 +240,7 @@ def display_choropleth(Tipo):
     Input("Reg", "value"),
     Input("sezR","value"),
     Input("sezP","value"))
-def display_BarPlot2(scelta,clickData,Reg,sezR):
+def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
     global OldClick
     global OldReg
     global Region
@@ -323,22 +323,74 @@ def display_BarPlot2(scelta,clickData,Reg,sezR):
 
     List=ListaProv[ListaProv["Regione"]==Region.upper()]["Prov"].to_list()
     dfTIpnew=dfTIp.query("Prov in @List")
+
+    dfProv=df.query("Prov in @List")
+    print(dfProv.head())
     
     ### GRAFICO PROVINCIA
+    if sezP=="Tutto":
+        dfR=dfProv[(dfProv["Cod_Tip"]== 20) | (dfProv["Cod_Tip"]== 19) | (dfProv["Cod_Tip"]== 1) | (dfProv["Cod_Tip"]== 14) | (dfProv["Cod_Tip"]== 15) | (dfProv["Cod_Tip"]== 21) | (dfProv["Cod_Tip"]== 13) | (dfProv["Cod_Tip"]== 22) | (dfProv["Cod_Tip"]== 16) ].groupby("Prov").mean("Compr,Loc").reset_index()
+        dfR.drop(columns=["Cod_Tip"],inplace=True)
+        dfR.rename(columns={"Compr": "ComprR","Loc": "LocR"},inplace=True)
+
+        dfC=dfProv[(dfProv["Cod_Tip"]== 5) | (dfProv["Cod_Tip"]== 9) | (dfProv["Cod_Tip"]== 17) | (dfProv["Cod_Tip"]== 23) ].groupby("Prov").mean("Compr,Loc").reset_index()
+        dfC.drop(columns=["Cod_Tip"],inplace=True)
+        dfC.rename(columns={"Compr": "ComprC","Loc": "LocC"},inplace=True)
+
+        dfT=dfProv[(dfProv["Cod_Tip"]== 6) | (dfProv["Cod_Tip"]== 18) ].groupby("Prov").mean().reset_index()
+        dfT.drop(columns=["Cod_Tip"],inplace=True)
+        dfT.rename(columns={"Compr": "ComprT","Loc": "LocT"},inplace=True)
+
+        dfP=dfProv[(dfProv["Cod_Tip"]== 8) | (dfProv["Cod_Tip"]== 7) | (dfProv["Cod_Tip"]== 10) ].groupby("Prov").mean("Compr,Loc").reset_index()
+        dfP.drop(columns=["Cod_Tip"],inplace=True)
+        dfP.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
+    elif sezR=="C":
+        dfR=dfProv[((dfProv["Cod_Tip"]== 20) | (dfProv["Cod_Tip"]== 19) | (dfProv["Cod_Tip"]== 1) | (dfProv["Cod_Tip"]== 14) | (dfProv["Cod_Tip"]== 15) | (dfProv["Cod_Tip"]== 21) | (dfProv["Cod_Tip"]== 13) | (dfProv["Cod_Tip"]== 22) | (dfProv["Cod_Tip"]== 16) ) & (dfProv["Fascia"]==sezR) ].groupby("Prov").mean("Compr,Loc").reset_index()
+        dfR.drop(columns=["Cod_Tip"],inplace=True)
+        dfR.rename(columns={"Compr": "ComprR","Loc": "LocR"},inplace=True)
+        
+        dfC=dfProv[((dfProv["Cod_Tip"]== 5) | (dfProv["Cod_Tip"]== 9) | (dfProv["Cod_Tip"]== 17) | (dfProv["Cod_Tip"]== 23)) &  ((dfProv["Fascia"]=="C") | (dfProv["Fascia"]=="B")) ].groupby("Prov").mean("Compr,Loc").reset_index()
+        dfC.drop(columns=["Cod_Tip"],inplace=True)
+        dfC.rename(columns={"Compr": "ComprC","Loc": "LocC"},inplace=True)
+        
+        dfT=dfProv[((dfProv["Cod_Tip"]== 6) | (dfProv["Cod_Tip"]== 18)) &  ((dfProv["Fascia"]=="C") | (dfProv["Fascia"]=="B")) ].groupby("Prov").mean("Compr,Loc").reset_index()
+        dfT.drop(columns=["Cod_Tip"],inplace=True)
+        dfT.rename(columns={"Compr": "ComprT","Loc": "LocT"},inplace=True)
+        
+        dfP=dfProv[((dfProv["Cod_Tip"]== 8) | (dfProv["Cod_Tip"]== 7) | (dfProv["Cod_Tip"]== 10)) &  ((dfProv["Fascia"]=="C") | (dfProv["Fascia"]=="B")) ].groupby("Prov").mean("Compr,Loc").reset_index()
+        dfP.drop(columns=["Cod_Tip"],inplace=True)
+        dfP.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
+    else:
+        dfR=dfProv[((df["Cod_Tip"]== 20) | (dfProv["Cod_Tip"]== 19) | (dfProv["Cod_Tip"]== 1) | (dfProv["Cod_Tip"]== 14) | (dfProv["Cod_Tip"]== 15) | (dfProv["Cod_Tip"]== 21) | (dfProv["Cod_Tip"]== 13) | (dfProv["Cod_Tip"]== 22) | (dfProv["Cod_Tip"]== 16) ) & (dfProv["Fascia"]==sezP) ].groupby("Prov").mean("Compr,Loc").reset_index()
+        dfR.drop(columns=["Cod_Tip"],inplace=True)
+        dfR.rename(columns={"Compr": "ComprR","Loc": "LocR"},inplace=True)
+        
+        dfC=dfProv[((dfProv["Cod_Tip"]== 5) | (dfProv["Cod_Tip"]== 9) | (dfProv["Cod_Tip"]== 17) | (dfProv["Cod_Tip"]== 23)) & (dfProv["Fascia"]==sezP) ].groupby("Prov").mean("Compr,Loc").reset_index()
+        dfC.drop(columns=["Cod_Tip"],inplace=True)
+        dfC.rename(columns={"Compr": "ComprC","Loc": "LocC"},inplace=True)
+        
+        dfT=dfProv[((dfProv["Cod_Tip"]== 6) | (dfProv["Cod_Tip"]== 18)) & (dfProv["Fascia"]==sezP) ].groupby("Prov").mean("Compr,Loc").reset_index()
+        dfT.drop(columns=["Cod_Tip"],inplace=True)
+        dfT.rename(columns={"Compr": "ComprT","Loc": "LocT"},inplace=True)
+        
+        dfP=dfProv[((dfProv["Cod_Tip"]== 8) | (dfProv["Cod_Tip"]== 7) | (dfProv["Cod_Tip"]== 10)) & (dfProv["Fascia"]==sezP) ].groupby("Prov").mean("Compr,Loc").reset_index()
+        dfP.drop(columns=["Cod_Tip"],inplace=True)
+        dfP.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
+       
     
     if(scelta=="cmp"):
         fig2 = go.Figure(data=[
-            go.Bar(name='Residenziale', x=dfTIpnew["Prov"], y=dfTIpnew["ComprR"],text=dfTIpnew["ComprR"]),
-            go.Bar(name='Commerciale', x=dfTIpnew["Prov"], y=dfTIpnew["ComprC"],text=dfTIpnew["ComprC"]),
-            go.Bar(name='Terziaria', x=dfTIpnew["Prov"], y=dfTIpnew["ComprT"],text=dfTIpnew["ComprT"]),
-            go.Bar(name='Produttiva', x=dfTIpnew["Prov"], y=dfTIpnew["ComprP"],text=dfTIpnew["ComprP"]) 
+            go.Bar(name='Residenziale', x=dfR["Prov"], y=dfR["ComprR"],text=dfR["ComprR"]),
+            go.Bar(name='Commerciale', x=dfC["Prov"], y=dfC["ComprC"],text=dfC["ComprC"]),
+            go.Bar(name='Terziaria', x=dfT["Prov"], y=dfT["ComprT"],text=dfT["ComprT"]),
+            go.Bar(name='Produttiva', x=dfP["Prov"], y=dfP["ComprP"],text=dfP["ComprP"]) 
         ])
     else:
         fig2 = go.Figure(data=[
-            go.Bar(name='Residenziale', x=dfTIpnew["Prov"], y=dfTIpnew["LocR"],text=dfTIpnew["LocR"]),
-            go.Bar(name='Commerciale', x=dfTIpnew["Prov"], y=dfTIpnew["LocC"],text=dfTIpnew["LocC"]),
-            go.Bar(name='Terziaria', x=dfTIpnew["Prov"], y=dfTIpnew["LocT"],text=dfTIpnew["LocT"]),
-            go.Bar(name='Produttiva', x=dfTIpnew["Prov"], y=dfTIpnew["LocP"],text=dfTIpnew["LocP"]) 
+            go.Bar(name='Residenziale', x=dfR["Prov"], y=dfR["LocR"],text=dfR["LocR"]),
+            go.Bar(name='Commerciale', x=dfC["Prov"], y=dfC["LocC"],text=dfC["LocC"]),
+            go.Bar(name='Terziaria', x=dfT["Prov"], y=dfT["LocT"],text=dfT["LocT"]),
+            go.Bar(name='Produttiva', x=dfP["Prov"], y=dfP["LocP"],text=dfP["LocP"]) 
         ])
 
 # Change the bar mode
@@ -357,7 +409,7 @@ def displayGraph(Prov,scelta):
     ### GRAFICO COMUNI
     List=ListaComm[ListaComm["Prov"]==Prov]["Comune_descrizione"].to_list()
     Comm=Commtot.query("Comune_descrizione in @List")
-    if(scelta=="comp"):
+    if(scelta=="cmp"):
         fig3 = px.scatter(Comm,x="Compr",y="Comune_descrizione",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
     else:
         fig3 = px.scatter(Comm,x="Loc",y="Comune_descrizione",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
@@ -384,7 +436,7 @@ def display_BarPlot(clickData,scelta):
     else:
         comune=clickData["points"][0]['y']
         x=["Residenziale","Commerciale","Terziaria", "Produttiva"]
-        if scelta=="comp":
+        if scelta=="cmp":
             y=[dfRc[dfRc["Comune_descrizione"]==comune]["ComprR"].item(),dfCc[dfCc["Comune_descrizione"]==comune]["ComprC"].item(),dfTc[dfTc["Comune_descrizione"]==comune]["ComprT"].item(),dfPc[dfPc["Comune_descrizione"]==comune]["ComprP"].item()]
         else:
             y=[dfRc[dfRc["Comune_descrizione"]==comune]["LocR"].item(),dfCc[dfCc["Comune_descrizione"]==comune]["LocC"].item(),dfTc[dfTc["Comune_descrizione"]==comune]["LocT"].item(),dfPc[dfPc["Comune_descrizione"]==comune]["LocP"].item()]
