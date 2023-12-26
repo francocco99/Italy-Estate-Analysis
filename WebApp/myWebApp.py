@@ -36,7 +36,7 @@ df["Loc_max"]=df["Loc_max"].fillna(0)
 
 MeanCompr=[]
 MeanLoc=[]
-### Forse meglio Prendere il massimo o il minimo
+###  Inutilizzato per  ora ###################
 for i in df.index:
     sumC=df['Compr_min'][i]+df['Compr_max'][i]
     sumL=df['Loc_min'][i]+df['Loc_max'][i]
@@ -45,14 +45,17 @@ for i in df.index:
 
     MeanCompr.append(mcomp)
     MeanLoc.append(mloc)
-   
-df["Compr"]=MeanCompr
-df["Loc"]=MeanLoc
+##############################################
+#df["Compr"]=MeanCompr
+#df["Loc"]=MeanLoc
 
 
 
 ### DIVISO PER REGIONE
-df.drop(['Compr_min','Compr_max','Loc_min','Loc_max'],axis=1,inplace=True)
+#df.drop(['Compr_min','Compr_max','Loc_min','Loc_max'],axis=1,inplace=True)
+df.drop(['Compr_min','Loc_min'],axis=1,inplace=True)
+df.rename(columns={"Compr_max": "Compr","Loc_max": "Loc"},inplace=True)
+
 regions=df["Regione"].unique().tolist()
 regionsMap= ['Piemonte', 'Trentino-alto adige/sudtirol', 'Lombardia', 'Puglia', 'Basilicata', 
            'Friuli venezia giulia', 'Liguria', "Valle d'aosta", 'Emilia-romagna',
@@ -112,7 +115,7 @@ dfTIp=pd.merge(dfTIp,dfPp,on="Prov",how="inner")
 
 #####
 
-ListaComm=df.groupby(["Comune_descrizione","Prov"]).mean("Compr,Loc").reset_index()
+ListaComm=df.groupby(["Comune_descrizione","Prov","Regione"]).mean("Compr,Loc").reset_index()
 ListaComm=ListaComm.drop(columns=["Cod_Tip","Compr","Loc"])
 ### DIVISO PER COMUNE
 dfRc=df[(df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
@@ -138,14 +141,38 @@ dfTIc=pd.merge(dfTIc,dfPc,on="Comune_descrizione",how="inner")
 
 ## COMUNE non diviso
 
-Commtot=df.groupby(["Comune_descrizione","Prov"]).mean("Compr,Loc").reset_index()
+Commtot=df.groupby(["Comune_descrizione","Prov","Regione"]).mean("Compr,Loc").reset_index()
 Commtot=Commtot.drop(columns=["Cod_Tip"])
 ####
 
 
 
 app = Dash(__name__, external_stylesheets=[])
+div_style = {
+    'backgroundColor': '#f2f2f2',  # Grigio
+    'borderRadius': '15px',  # Bordi arrotondati
+    'padding': '20px'  # Padding interno
+}
+
+# Contenuto del div
+div_content = html.Div(
+    [
+        html.H3('Dataset OMI(Osservatorio sul mercato Immobiliare)',style={'font-family': 'sans-serif'}),
+        html.P(["il Dataset contiene i dati relativi alle quotazioni immobiliari del secondo semestre del 2022. "
+               "Per ogni zona territoriale delimitata di ciascun comune",html.Span("(Zona OMI)",style={'fontWeight': 'bold'}),
+               ". Le quotazioni OMI, disponibili in un semestre, sono relative ai comuni censiti negli archivi catastali, , le quotazioni OMI non possono intendersi sostitutive della stima puntuale, in quanto forniscono indicazioni di valore di larga massima"
+               "sono prensenti diversi dati",
+               html.Ul([
+            html.Li("intervallo minimo/massimo, per unità di superficie in euro a metro quadro"),
+        ])],style={'font-family': 'sans-serif'}),
+        # Puoi aggiungere altri componenti HTML qui
+    ],
+    style=div_style
+)
+
 app.layout =html.Div([
+    html.H1('Analisi prezzi degli Immobili',style={ 'text-align': 'center','font-family': 'sans-serif'}),
+    html.Div(div_content),
     html.H1('Prezzi degli Immobili',style={ 'text-align': 'center','font-family': 'sans-serif'}),
     dcc.RadioItems(
         id='Tipo', 
@@ -204,10 +231,10 @@ app.layout =html.Div([
             dcc.Graph(id='graph3')
         ], className="six columns",style={'width': '48%', 'display': 'inline-block', 'padding': '1%'}),
     ], className="row"),
-    html.P("Seleziona la Provincia",style={'font-family': 'sans-serif','text-align': 'center'}),
-    dcc.Dropdown(id='Prov'),
     html.H2('Comuni',style={'font-family': 'sans-serif','text-align': 'center'}),
     dcc.Graph(id="graph4"),
+    html.P("Seleziona il comune",style={'font-family': 'sans-serif','text-align': 'center'}),
+    dcc.Dropdown(id='CommD',style={'font-family': 'sans-serif'}),
     html.H2(id="Com",style={'font-family': 'sans-serif','text-align': 'center'}),
     dcc.Graph(id="graph5")
 
@@ -232,8 +259,8 @@ def display_choropleth(Tipo):
 ################ CLICK ON MAP ################################
 @app.callback(
     Output("graph", "figure"), 
-    Output("Prov","options"),
     Output("graph3","figure"),
+    Output("CommD","options"),
     Output("nameProv","children"),
     Input("scelta","value"),
     Input("graph2", "clickData"),
@@ -306,7 +333,7 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
         dfP=df[((df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10)) &  (df["Fascia"]==sezR) ].groupby("Regione").mean("Compr,Loc").reset_index()
         dfP.drop(columns=["Cod_Tip"],inplace=True)
         dfP.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
-        if(scelta=="comp"):
+        if(scelta=="cmp"):
             y=[dfR[dfR["Regione"]==Region]["ComprR"].item(),dfC[dfC["Regione"]==Region]["ComprC"].item(),dfT[dfT["Regione"]==Region]["ComprT"].item(),dfP[dfP["Regione"]==Region]["ComprP"].item()]
         else:
             y=[dfR[dfR["Regione"]==Region]["LocR"].item(),dfC[dfC["Regione"]==Region]["LocC"].item(),dfT[dfT["Regione"]==Region]["LocT"].item(),dfP[dfP["Regione"]==Region]["LocP"].item()]
@@ -321,11 +348,13 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
     fig.update_layout(barmode='group')
     fig.update_traces(texttemplate='%{text:.2s}€', textposition='inside')
 
-    List=ListaProv[ListaProv["Regione"]==Region.upper()]["Prov"].to_list()
+    List=ListaProv[ListaProv["Regione"]==Region]["Prov"].to_list()
+    ListC=ListaComm[ListaComm["Regione"]==Region]["Comune_descrizione"].to_list()
     dfTIpnew=dfTIp.query("Prov in @List")
 
     dfProv=df.query("Prov in @List")
     print(dfProv.head())
+
     
     ### GRAFICO PROVINCIA
     if sezP=="Tutto":
@@ -337,14 +366,14 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
         dfC.drop(columns=["Cod_Tip"],inplace=True)
         dfC.rename(columns={"Compr": "ComprC","Loc": "LocC"},inplace=True)
 
-        dfT=dfProv[(dfProv["Cod_Tip"]== 6) | (dfProv["Cod_Tip"]== 18) ].groupby("Prov").mean().reset_index()
+        dfT=dfProv[(dfProv["Cod_Tip"]== 6) | (dfProv["Cod_Tip"]== 18) ].groupby("Prov").mean("Compr,Loc").reset_index()
         dfT.drop(columns=["Cod_Tip"],inplace=True)
         dfT.rename(columns={"Compr": "ComprT","Loc": "LocT"},inplace=True)
 
         dfP=dfProv[(dfProv["Cod_Tip"]== 8) | (dfProv["Cod_Tip"]== 7) | (dfProv["Cod_Tip"]== 10) ].groupby("Prov").mean("Compr,Loc").reset_index()
         dfP.drop(columns=["Cod_Tip"],inplace=True)
         dfP.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
-    elif sezR=="C":
+    elif sezP=="C":
         dfR=dfProv[((dfProv["Cod_Tip"]== 20) | (dfProv["Cod_Tip"]== 19) | (dfProv["Cod_Tip"]== 1) | (dfProv["Cod_Tip"]== 14) | (dfProv["Cod_Tip"]== 15) | (dfProv["Cod_Tip"]== 21) | (dfProv["Cod_Tip"]== 13) | (dfProv["Cod_Tip"]== 22) | (dfProv["Cod_Tip"]== 16) ) & (dfProv["Fascia"]==sezR) ].groupby("Prov").mean("Compr,Loc").reset_index()
         dfR.drop(columns=["Cod_Tip"],inplace=True)
         dfR.rename(columns={"Compr": "ComprR","Loc": "LocR"},inplace=True)
@@ -396,60 +425,121 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
 # Change the bar mode
     fig2.update_layout(barmode='group')
     fig2.update_traces(texttemplate='%{text:.2s}€', textposition='inside')
-    return fig,List,fig2,Region
+    return fig,fig2,ListC,Region
 
 ###################### GRAFICI REGIONE #######################
 ### DECIDERE COSA FARE ############################### GRAFICO COMUNI
 @app.callback(
     Output("graph4", "figure"), 
-    Input("Prov","value"),
+    Input("graph2", "clickData"),
+    Input("Reg", "value"), 
     Input("scelta","value")
 )
-def displayGraph(Prov,scelta):
+
+def displayGraph(clickData,Reg,scelta):
+    global OldClick2
+    global OldReg2
+    global Region2
+    if clickData is None:
+        OldClick2=0
+        Region2=Reg
+        OldReg2=Reg
+    elif OldClick==0:
+        Region2=clickData["points"][0]["location"].upper()
+        OldClick2=clickData["points"][0]["location"].upper()
+        
+    elif (OldClick2!=Reg) & (OldReg2!=Reg):
+        Region2=Reg
+        OldReg2=Reg
+    else:
+        Region2=clickData["points"][0]["location"].upper()
+        OldClick2=clickData["points"][0]["location"].upper()
     ### GRAFICO COMUNI
-    List=ListaComm[ListaComm["Prov"]==Prov]["Comune_descrizione"].to_list()
+    List=ListaComm[ListaComm["Regione"]==Region2]["Comune_descrizione"].to_list()
     Comm=Commtot.query("Comune_descrizione in @List")
     if(scelta=="cmp"):
-        fig3 = px.scatter(Comm,x="Compr",y="Comune_descrizione",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
+        fig3 = px.scatter(Comm,x="Compr",y="Comune_descrizione",color="Prov",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
     else:
-        fig3 = px.scatter(Comm,x="Loc",y="Comune_descrizione",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
-    fig3.update_layout({
-    'yaxis': {
-        'range': [0, len(Comm)],
-        'tickmode': 'array',
-        'tickvals': [*range(len(Comm))],
-        'ticktext': Comm["Comune_descrizione"],
-    },
-    'height':2000
-})
-   
+        fig3 = px.scatter(Comm,x="Loc",y="Comune_descrizione",color="Prov",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
+    
+    fig3.update_yaxes(showticklabels=False)
     return fig3
+
+
+##### GRAFICO COMUNE ####################################
 
 @app.callback(
     Output("Com", "children"), 
     Output("graph5","figure"),
     Input("graph4", "clickData"),
+    Input("CommD","value"),
     Input("scelta","value"))
-def display_BarPlot(clickData,scelta):
+def display_BarPlot(clickData,Comm,scelta):
+    global OldClick3
+    global Oldcom
+    global Comu
     if clickData is None:
-        return "",""
+        OldClick3=0
+        Comu=Comm
+        Oldcom=Comm
+    elif OldClick3==0:
+        Comu=clickData["points"][0]['y'].upper()
+        OldClick3=clickData["points"][0]['y'].upper()
+        
+    elif (OldClick3!=Comm) & (Oldcom!=Comm):
+        Comu=Comm
+        Oldcom=Comm
     else:
-        comune=clickData["points"][0]['y']
-        x=["Residenziale","Commerciale","Terziaria", "Produttiva"]
-        if scelta=="cmp":
-            y=[dfRc[dfRc["Comune_descrizione"]==comune]["ComprR"].item(),dfCc[dfCc["Comune_descrizione"]==comune]["ComprC"].item(),dfTc[dfTc["Comune_descrizione"]==comune]["ComprT"].item(),dfPc[dfPc["Comune_descrizione"]==comune]["ComprP"].item()]
+        Comu=clickData["points"][0]['y'].upper()
+        OldClick3=clickData["points"][0]['y'].upper()
+   
+    x=["Residenziale","Commerciale","Terziaria", "Produttiva"]
+    if scelta=="cmp":
+        if len(dfRc[dfRc["Comune_descrizione"]==Comu]["ComprR"].tolist())==0:
+            Res=0
         else:
-            y=[dfRc[dfRc["Comune_descrizione"]==comune]["LocR"].item(),dfCc[dfCc["Comune_descrizione"]==comune]["LocC"].item(),dfTc[dfTc["Comune_descrizione"]==comune]["LocT"].item(),dfPc[dfPc["Comune_descrizione"]==comune]["LocP"].item()]
-        fig4 = go.Figure(data=[go.Bar(
-                x=x, y=y,
-                text=y,
-                textposition='auto',
-                #marker_color=colors
-            )])
-        # Change the bar mode
-        fig4.update_layout(barmode='group')
-        fig4.update_traces(texttemplate='%{text:.2s}€', textposition='inside') 
-        return "Comune di: " + comune,fig4
+            Res=dfRc[dfRc["Comune_descrizione"]==Comu]["ComprR"].item()
+        if len(dfCc[dfCc["Comune_descrizione"]==Comu]["ComprC"].tolist())==0:
+            Comm=0
+        else:
+            Comm=dfCc[dfCc["Comune_descrizione"]==Comu]["ComprC"].item()
+        if len(dfTc[dfTc["Comune_descrizione"]==Comu]["ComprT"].tolist())==0:
+            Terz=0
+        else:
+            Terz=dfTc[dfTc["Comune_descrizione"]==Comu]["ComprT"].item()
+        if len(dfPc[dfPc["Comune_descrizione"]==Comu]["ComprP"].tolist())==0:
+            Prod=0
+        else:
+            Prod=dfPc[dfPc["Comune_descrizione"]==Comu]["ComprP"].item()
+    else:
+        if len(dfRc[dfRc["Comune_descrizione"]==Comu]["LocR"].tolist())==0:
+            Res=0
+        else:
+            Res=dfRc[dfRc["Comune_descrizione"]==Comu]["LocR"].item()
+        if len(dfCc[dfCc["Comune_descrizione"]==Comu]["LocC"].tolist())==0:
+            Comm=0
+        else:
+            Comm=dfCc[dfCc["Comune_descrizione"]==Comu]["LocC"].item()
+        if len(dfTc[dfTc["Comune_descrizione"]==Comu]["LocT"].tolist())==0:
+            Terz=0
+        else:
+            Terz=dfTc[dfTc["Comune_descrizione"]==Comu]["LocT"].item()
+        if len(dfPc[dfPc["Comune_descrizione"]==Comu]["LocP"].tolist())==0:
+            Prod=0
+        else:
+            Prod=dfPc[dfPc["Comune_descrizione"]==Comu]["LocP"].item()
+        
+    y=[Res,Comm,Terz,Prod]
+    fig4 = go.Figure(data=[go.Bar(
+            x=x, y=y,
+            text=y,
+            textposition='auto',
+            #marker_color=colors
+        )])
+    # Change the bar mode
+    fig4.update_layout(barmode='group')
+    fig4.update_traces(texttemplate='%{text:.2s}€', textposition='inside') 
+    return "Comune di: " + Comu,fig4
 
 app.run_server(port=8052)
 
@@ -500,11 +590,93 @@ app.run_server(port=8052)
 
 
 
-
-
-
-
-
+#Opzione PER I COMUNI ############################################################################
+"""@app.callback(
+    Output("graph4", "figure"), 
+    Input("Prov","value"),
+    Input("scelta","value")
+)
+def displayGraph(Prov,scelta):
+    ### GRAFICO COMUNI
+    List=ListaComm[ListaComm["Prov"]==Prov]["Comune_descrizione"].to_list()
+    Comm=Commtot.query("Comune_descrizione in @List")
+    if(scelta=="cmp"):
+        fig3 = px.scatter(Comm,x="Compr",y="Comune_descrizione",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
+    else:
+        fig3 = px.scatter(Comm,x="Loc",y="Comune_descrizione",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
+    fig3.update_layout({
+    'yaxis': {
+        'range': [0, len(Comm)],
+        'tickmode': 'array',
+        'tickvals': [*range(len(Comm))],
+        'ticktext': Comm["Comune_descrizione"],
+    },
+    'height':2000
+})
+   
+    return fig3
+"""
+####################SECONDA OPZIONE PER I COMUNI ##############
+"""
+def displayGraph(clickData,Reg,scelta):
+    global OldClick
+    global OldReg
+    global Region
+    if clickData is None:
+        OldClick=0
+        Region=Reg
+        OldReg=Reg
+    elif OldClick==0:
+        Region=clickData["points"][0]["location"].upper()
+        OldClick=clickData["points"][0]["location"].upper()
+        
+    elif (OldClick!=Reg) & (OldReg!=Reg):
+        Region=Reg
+        OldReg=Reg
+    else:
+        Region=clickData["points"][0]["location"].upper()
+        OldClick=clickData["points"][0]["location"].upper()
+    ### GRAFICO COMUNI
+    List=ListaComm[ListaComm["Regione"]==Region]["Comune_descrizione"].to_list()
+    Comm=Commtot.query("Comune_descrizione in @List")
+    if(scelta=="cmp"):
+        fig3 = px.scatter(Comm,x="Compr",y="Comune_descrizione",color="Prov",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
+    else:
+        fig3 = px.scatter(Comm,x="Loc",y="Comune_descrizione",color="Prov",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
+    
+    fig3.update_yaxes(showticklabels=False)
+    return fig3
+"""
+"""
+@app.callback(
+Output("graph4", "figure"), 
+Input("graph2", "clickData"),
+Input("Reg", "value")
+)
+def displayGraph(clickData,Reg):
+    global OldClick
+    global OldReg
+    global Region
+    if clickData is None:
+        OldClick=0
+        Region=Reg
+        OldReg=Reg
+    elif OldClick==0:
+        Region=clickData["points"][0]["location"].upper()
+        OldClick=clickData["points"][0]["location"].upper()
+        
+    elif (OldClick!=Reg) & (OldReg!=Reg):
+        Region=Reg
+        OldReg=Reg
+    else:
+        Region=clickData["points"][0]["location"].upper()
+        OldClick=clickData["points"][0]["location"].upper()
+    ### GRAFICO COMUNI
+    List=ListaComm[ListaComm["Regione"]==Region]["Comune_descrizione"].to_list()
+    Comm=Commtot.query("Comune_descrizione in @List")
+    fig3 = px.scatter(Comm,x="Compr",y="Loc",color="Prov",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
+    return fig3
+"""
 ### SECONDA OPZIONE PER LE REGIONI
 """ x=["Residenziale","Commerciale","Terziaria", "Produttiva"]
     y=[dfTI[dfTI["Regione"]==Reg]["ComprR"].item(),dfTI[dfTI["Regione"]==Reg]["ComprC"].item(),dfTI[dfTI["Regione"]==Reg]["ComprT"].item(),dfTI[dfTI["Regione"]==Reg]["ComprP"].item()]
