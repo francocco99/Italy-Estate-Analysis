@@ -152,6 +152,7 @@ Commtot=Commtot.drop(columns=["Cod_Tip"])
 
 
 app = Dash(__name__, external_stylesheets=[])
+server=app.server
 div_style = {
     'backgroundColor': '#f2f2f2',  # Grigio
     'borderRadius': '15px',  # Bordi arrotondati
@@ -599,14 +600,240 @@ def display_BarPlot(clickData,Comm,scelta):
     fig4.update_layout(barmode='group')
     fig4.update_traces(texttemplate='%{text:.2s}€', textposition='inside') 
     return "Comune di: " + Comu,fig4
+if __name__=="__main__":
+    app.run_server(debug=False)
 
+
+
+
+
+
+
+
+
+<<<<<<< HEAD
+=======
+
+"""
+@app.callback(
+    Output("graph4", "figure"), 
+    Input("Prov","value")
+)
+def displayGraph(Prov):
+    ### GRAFICO COMUNI
+    print(Prov)
+    print(ListaComm.head())
+    List=ListaComm[ListaComm["Prov"]==Prov.upper()]["Comune_descrizione"].to_list()
+    dfRcnew=dfRc.query("Comune_descrizione in @List")
+
+    dfCcnew=dfCc.query("Comune_descrizione in @List")
+
+    dfTcnew=dfTc.query("Comune_descrizione in @List")
+
+    dfPcnew=dfPc.query("Comune_descrizione in @List")
+
+
+    fig3 = go.Figure(data=[
+    go.Bar(name='Residenziale', x=dfRcnew["Comune_descrizione"], y=dfRcnew["ComprR"],text=dfRcnew["ComprR"]),
+    go.Bar(name='Commerciale', x=dfCcnew["Comune_descrizione"], y=dfCcnew["ComprC"],text=dfCcnew["ComprC"]),
+    go.Bar(name='Terziaria', x=dfTcnew["Comune_descrizione"], y=dfTcnew["ComprT"],text=dfTcnew["ComprT"]),
+    go.Bar(name='Produttiva', x=dfPcnew["Comune_descrizione"], y=dfPcnew["ComprP"],text=dfPcnew["ComprP"])
+    
+    
+    ])
+    # Change the bar mode
+    fig3.update_layout(barmode='group')
+    fig3.update_traces(texttemplate='%{text:.2s}€', textposition='inside')
+    return fig3
 app.run_server(port=8052)
 
+"""
 
 
 
 
+#Opzione PER I COMUNI ############################################################################
+"""@app.callback(
+    Output("graph4", "figure"), 
+    Input("Prov","value"),
+    Input("scelta","value")
+)
+def displayGraph(Prov,scelta):
+    ### GRAFICO COMUNI
+    List=ListaComm[ListaComm["Prov"]==Prov]["Comune_descrizione"].to_list()
+    Comm=Commtot.query("Comune_descrizione in @List")
+    if(scelta=="cmp"):
+        fig3 = px.scatter(Comm,x="Compr",y="Comune_descrizione",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
+    else:
+        fig3 = px.scatter(Comm,x="Loc",y="Comune_descrizione",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
+    fig3.update_layout({
+    'yaxis': {
+        'range': [0, len(Comm)],
+        'tickmode': 'array',
+        'tickvals': [*range(len(Comm))],
+        'ticktext': Comm["Comune_descrizione"],
+    },
+    'height':2000
+})
+   
+    return fig3
+"""
+####################SECONDA OPZIONE PER I COMUNI ##############
+"""
+def displayGraph(clickData,Reg,scelta):
+    global OldClick
+    global OldReg
+    global Region
+    if clickData is None:
+        OldClick=0
+        Region=Reg
+        OldReg=Reg
+    elif OldClick==0:
+        Region=clickData["points"][0]["location"].upper()
+        OldClick=clickData["points"][0]["location"].upper()
+        
+    elif (OldClick!=Reg) & (OldReg!=Reg):
+        Region=Reg
+        OldReg=Reg
+    else:
+        Region=clickData["points"][0]["location"].upper()
+        OldClick=clickData["points"][0]["location"].upper()
+    ### GRAFICO COMUNI
+    List=ListaComm[ListaComm["Regione"]==Region]["Comune_descrizione"].to_list()
+    Comm=Commtot.query("Comune_descrizione in @List")
+    if(scelta=="cmp"):
+        fig3 = px.scatter(Comm,x="Compr",y="Comune_descrizione",color="Prov",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
+    else:
+        fig3 = px.scatter(Comm,x="Loc",y="Comune_descrizione",color="Prov",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
+    
+    fig3.update_yaxes(showticklabels=False)
+    return fig3
+"""
+"""
+@app.callback(
+Output("graph4", "figure"), 
+Input("graph2", "clickData"),
+Input("Reg", "value")
+)
+def displayGraph(clickData,Reg):
+    global OldClick
+    global OldReg
+    global Region
+    if clickData is None:
+        OldClick=0
+        Region=Reg
+        OldReg=Reg
+    elif OldClick==0:
+        Region=clickData["points"][0]["location"].upper()
+        OldClick=clickData["points"][0]["location"].upper()
+        
+    elif (OldClick!=Reg) & (OldReg!=Reg):
+        Region=Reg
+        OldReg=Reg
+    else:
+        Region=clickData["points"][0]["location"].upper()
+        OldClick=clickData["points"][0]["location"].upper()
+    ### GRAFICO COMUNI
+    List=ListaComm[ListaComm["Regione"]==Region]["Comune_descrizione"].to_list()
+    Comm=Commtot.query("Comune_descrizione in @List")
+    fig3 = px.scatter(Comm,x="Compr",y="Loc",color="Prov",labels={"Compr":"Prezzo medio di Compravendita","Comune_descrizione":"Comune"})
+    return fig3
+"""
+### SECONDA OPZIONE PER LE REGIONI
+""" x=["Residenziale","Commerciale","Terziaria", "Produttiva"]
+    y=[dfTI[dfTI["Regione"]==Reg]["ComprR"].item(),dfTI[dfTI["Regione"]==Reg]["ComprC"].item(),dfTI[dfTI["Regione"]==Reg]["ComprT"].item(),dfTI[dfTI["Regione"]==Reg]["ComprP"].item()]
+    print(dfTI[dfTI["Regione"]==Reg])
+    fig = go.Figure(data=[go.Bar(
+            x=x, y=y,
+            text=y,
+            textposition='auto',
+            backgroundColor: ["red", "blue", "green", "blue", "red", "blue"]
+        )])"""
+""" fig = go.Figure(data=[
+        go.Bar(name='Residenziale', x=[dfTI[dfTI["Regione"]==Reg]["Regione"].item()], y=[dfTI[dfTI["Regione"]==Reg]["ComprR"].item()],text=[dfTI[dfTI["Regione"]==Reg]["ComprR"].item()]),
+        go.Bar(name='Commerciale', x=[dfTI[dfTI["Regione"]==Reg]["Regione"].item()],y=[dfTI[dfTI["Regione"]==Reg]["ComprC"].item()],text=[dfTI[dfTI["Regione"]==Reg]["ComprR"].item()]),
+        go.Bar(name='Terziaria', x=[dfTI[dfTI["Regione"]==Reg]["Regione"].item()],y=[dfTI[dfTI["Regione"]==Reg]["ComprT"].item()],text=[dfTI[dfTI["Regione"]==Reg]["ComprR"].item()]),
+        go.Bar(name='Produttiva', x=[dfTI[dfTI["Regione"]==Reg]["Regione"].item()],y=[dfTI[dfTI["Regione"]==Reg]["ComprP"].item()],text=[dfTI[dfTI["Regione"]==Reg]["ComprR"].item()])
+    
+    ])"""
+
+
+"""
+    html.P("Seleziona il tipo di Immobile:"),
+    dcc.RadioItems(
+        id='Tipo', 
+        options=[{'label': 'Residenziale', 'value': 'ComprR'},
+       {'label': 'Commerciale', 'value': 'ComprC'},
+       {'label': 'Terziaria', 'value': 'ComprT'},
+        {'label': 'Produttiva', 'value': 'ComprP'}],
+        value="ComprR",
+        inline=True
+    ),
+    dcc.Graph(id="graph2"),
+    """
+
+"""
+@app.callback(
+    Output("graph2", "figure"), 
+    Input("Tipo", "value"))
+
+def display_choropleth(Tipo):
+    df = dfTI 
+    print(Tipo)
+    geojson = gj
+    fig = px.choropleth(
+        df, geojson=geojson, color=Tipo,
+        locations="Regione", featureidkey="properties.name",
+        projection="mercator",labels={"ComprP":"Prezzi immobili Produttivi","ComprR":"Prezzi immobili Residenziali","ComprC":"Prezzi immobili Commerciali","ComprT":"Prezzi immobili Set. Terziario"})
+    fig.update_geos(fitbounds="locations", visible=False)
+    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+    return fig
+"""
 
 
 
+"""
+################ CLICK ON MAP ################################
+@app.callback(
+    Output("graph", "figure"), 
+    Output("Prov","options"),
+    Output("graph3","figure"),
+    Output("nameProv","children"),
+    Input("graph2", "clickData"))
+def display_BarPlot2(clickData):
+    Reg=clickData["points"][0]["location"].upper()
+    print(Reg)
+    x=["Residenziale","Commerciale","Terziaria", "Produttiva"]
+    y=[dfTI[dfTI["Regione"]==Reg]["ComprR"].item(),dfTI[dfTI["Regione"]==Reg]["ComprC"].item(),dfTI[dfTI["Regione"]==Reg]["ComprT"].item(),dfTI[dfTI["Regione"]==Reg]["ComprP"].item()]
 
+    #colors=["steelblue","firebrick","green","yellow"]
+    fig = go.Figure(data=[go.Bar(
+            x=x, y=y,
+            text=y,
+            textposition='auto',
+            #marker_color=colors
+        )])
+    # Change the bar mode
+    fig.update_layout(barmode='group')
+    fig.update_traces(texttemplate='%{text:.2s}€', textposition='inside')
+    
+    ### GRAFICO PROVINCIA
+    List=ListaProv[ListaProv["Regione"]==Reg.upper()]["Prov"].to_list()
+    dfTIpnew=dfTIp.query("Prov in @List")
+    fig2 = go.Figure(data=[
+    go.Bar(name='Residenziale', x=dfTIpnew["Prov"], y=dfTIpnew["ComprR"],text=dfTIpnew["ComprR"]),
+    go.Bar(name='Commerciale', x=dfTIpnew["Prov"], y=dfTIpnew["ComprC"],text=dfTIpnew["ComprC"]),
+    go.Bar(name='Terziaria', x=dfTIpnew["Prov"], y=dfTIpnew["ComprT"],text=dfTIpnew["ComprT"]),
+    go.Bar(name='Produttiva', x=dfTIpnew["Prov"], y=dfTIpnew["ComprP"],text=dfTIpnew["ComprP"])
+    
+    
+    ])
+# Change the bar mode
+    fig2.update_layout(barmode='group')
+    fig2.update_traces(texttemplate='%{text:.2s}€', textposition='inside')
+    
+
+
+    return fig,List,fig2,Reg
+"""
+>>>>>>> 4eaac55b667296bd0750784361380f417691ca97
