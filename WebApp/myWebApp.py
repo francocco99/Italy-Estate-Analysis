@@ -153,6 +153,7 @@ Commtot=Commtot.drop(columns=["Cod_Tip"])
 
 
 app = Dash(__name__, external_stylesheets=[])
+server=app.server
 div_style = {
     'backgroundColor': '#f2f2f2',  # Grigio
     'borderRadius': '15px',  # Bordi arrotondati
