@@ -600,8 +600,8 @@ def display_BarPlot(clickData,Comm,scelta):
     fig4.update_layout(barmode='group')
     fig4.update_traces(texttemplate='%{text:.2s}€', textposition='inside') 
     return "Comune di: " + Comu,fig4
-
-app.run_server(port=8052)
+if __name__=="__main__":
+    app.run_server(debug=False)
 
 
 
