@@ -76,8 +76,9 @@ regions.sort()
 regionsMap.sort()
 ### DIVISO PER REGIONE 
 
-dfRegion=df.groupby("Regione").mean().reset_index()
-dfRegion.drop(columns=["Cod_Tip"],inplace=True)
+dfRegion=df.groupby("Regione")[["Compr","Loc"]].mean().reset_index()
+dfRegionUp=dfRegion.copy()
+dfRegion["Regione"]=regionsMap
 
 
 dfR=df[(df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ].groupby("Regione").mean("Compr,Loc").reset_index()
@@ -211,13 +212,15 @@ app.layout =html.Div([
     html.H1('Analisi prezzi degli Immobili',style={ 'text-align': 'center','font-family': 'sans-serif'}),
     html.Div(div_content),
     html.H1('Prezzi degli Immobili',style={ 'text-align': 'center','font-family': 'sans-serif'}),
+    html.P('Seleziona il tipo di Edificio:',style={ 'text-align': 'center','font-family': 'sans-serif'}),
     dcc.RadioItems(
         id='Tipo', 
-        options=[{'label': 'Residenziale', 'value': 'ComprR'},
+        options=[{'label': 'Tutti', 'value': 'Tutti'},
+        {'label': 'Residenziale', 'value': 'ComprR'},
         {'label': 'Commerciale', 'value': 'ComprC'},
         {'label': 'Terziaria', 'value': 'ComprT'},
         {'label': 'Produttiva', 'value': 'ComprP'}],
-        value="ComprR",
+        value="Tutti",
         style={ 'text-align': 'center','font-family': 'sans-serif'},
         inline=True
     ),
@@ -292,16 +295,28 @@ app.layout =html.Div([
     Input("graph2", "clickData"),
     Input("Tipo", "value"))
 def display_choropleth(clickData,Tipo):
-    figm = go.Figure(data=go.Choropleth(
-    geojson=gj, 
-    z=dfTI2[Tipo],
-    text=dfTI2[Tipo],
-    locations=dfTI2["Regione"], 
-    featureidkey="properties.name",
-    colorscale ="Blues",
-    colorbar_tickprefix = '€',
-    colorbar_title = 'Prezzo Medio<br>Compravendita  €',
-    ))
+    if Tipo=="Tutti":
+        figm = go.Figure(data=go.Choropleth(
+        geojson=gj, 
+        z=dfRegion["Compr"],
+        text=dfRegion["Compr"],
+        locations=dfRegion["Regione"], 
+        featureidkey="properties.name",
+        colorscale ="Blues",
+        colorbar_tickprefix = '€',
+        colorbar_title = 'Prezzo Medio<br>Compravendita  €',
+        ))
+    else:
+        figm = go.Figure(data=go.Choropleth(
+        geojson=gj, 
+        z=dfTI2[Tipo],
+        text=dfTI2[Tipo],
+        locations=dfTI2["Regione"], 
+        featureidkey="properties.name",
+        colorscale ="Blues",
+        colorbar_tickprefix = '€',
+        colorbar_title = 'Prezzo Medio<br>Compravendita  €',
+        ))
     figm.update_geos(fitbounds="locations", visible=False,center=None, projection_scale=3)
     figm.update_layout(margin={"r":0,"t":0,"l":0,"b":0},dragmode=False)
     if clickData:
@@ -620,16 +635,15 @@ def displayGraph(clickData,Reg,scelta):
         Region2=clickData["points"][0]["location"].upper()
         OldClick2=clickData["points"][0]["location"].upper()
     ### GRAFICO COMUNI
-    
     List=ListaComm[ListaComm["Regione"]==Region2]["Comune_descrizione"].to_list()
     ## Ricontrollo la regione perchè ci possono essere due comuni con lo stesso nome in regioni diverse
     Comm=Commtot[Commtot["Regione"]==Region2].query("Comune_descrizione in @List")
     if(scelta=="cmp"):
         fig3 = px.scatter(Comm,x="Compr_max",y="Comune_descrizione",color="Prov",labels={"Prov":"Province"})
-        xreg=dfRegion[dfRegion["Regione"]==Region2]["Compr"].item()
+        xreg=dfRegionUp[dfRegionUp["Regione"]==Region2]["Compr"].item()
     else:
         fig3 = px.scatter(Comm,x="Loc_max",y="Comune_descrizione",color="Prov",labels={"Prov":"Province"})
-        xreg=dfRegion[dfRegion["Regione"]==Region2]["Loc"].item()
+        xreg=dfRegionUp[dfRegionUp["Regione"]==Region2]["Loc"].item()
     
     # fig3.update_yaxes(showticklabels=False)
     fig3.add_vline(x=xreg, line_width=3, line_dash="dash", line_color="blue",annotation_text="Media Regionale: "+str(round(xreg,2)) +"€")
