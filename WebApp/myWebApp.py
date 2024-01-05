@@ -4,6 +4,7 @@ import pandas as pd
 import json
 import plotly.graph_objects as go
 
+
 df=pd.read_csv('../Valori.csv',sep=';',skiprows=1)
 
 with open("../italy-with-regions_1458.geojson") as f:
@@ -37,20 +38,6 @@ df["Compr_max"]=df["Compr_max"].fillna(0)
 df["Loc_min"]=df["Loc_min"].fillna(0)
 df["Loc_max"]=df["Loc_max"].fillna(0)
 
-MeanCompr=[]
-MeanLoc=[]
-###  Inutilizzato per  ora ###################
-for i in df.index:
-    sumC=df['Compr_min'][i]+df['Compr_max'][i]
-    sumL=df['Loc_min'][i]+df['Loc_max'][i]
-    mcomp=sumC/2
-    mloc=sumL/2
-
-    MeanCompr.append(mcomp)
-    MeanLoc.append(mloc)
-##############################################
-#df["Compr"]=MeanCompr
-#df["Loc"]=MeanLoc
 
 
 
@@ -60,7 +47,7 @@ df.loc[df["Regione"]=="VALLE D'AOSTA/VALLE`E D'AOSTE","Regione"]="VALLE D'AOSTA"
 df.loc[df["Regione"]=="TRENTINO-ALTO ADIGE","Regione"]="TRENTINO-ALTO ADIGE/SUDTIROL"
 df.loc[df["Regione"]=="FRIULI-VENEZIA GIULIA","Regione"]="FRIULI VENEZIA GIULIA"
 dfcom=df.copy()
-df.drop(['Compr_min','Loc_min'],axis=1,inplace=True)
+#df.drop(['Compr_min','Loc_min'],axis=1,inplace=True)
 df.rename(columns={"Compr_max": "Compr","Loc_max": "Loc"},inplace=True)
 
 
@@ -98,6 +85,7 @@ dfP.drop(columns=["Cod_Tip"],inplace=True)
 dfP.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
 
 
+
 dfTI=pd.merge(dfR,dfC,on="Regione",how="inner")
 dfTI=pd.merge(dfTI,dfT,on="Regione",how="inner")
 dfTI=pd.merge(dfTI,dfP,on="Regione",how="inner")
@@ -121,7 +109,7 @@ dfCp=df[(df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["
 dfCp.drop(columns=["Cod_Tip"],inplace=True)
 dfCp.rename(columns={"Compr": "ComprC","Loc": "LocC"},inplace=True)
 
-dfTp=df[(df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18) ].groupby("Prov").mean().reset_index()
+dfTp=df[(df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18) ].groupby("Prov").mean("Prova").reset_index()
 dfTp.drop(columns=["Cod_Tip"],inplace=True)
 dfTp.rename(columns={"Compr": "ComprT","Loc": "LocT"},inplace=True)
 
@@ -139,20 +127,16 @@ ListaComm=dfcom.groupby(["Comune_descrizione","Prov","Regione"]).mean("Compr_max
 ListaComm=ListaComm.drop(columns=["Compr_min","Loc_min","Compr_max","Loc_max"])
 
 ### DIVISO PER COMUNE
-dfRc=df[(df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
-dfRc.drop(columns=["Cod_Tip"],inplace=True)
+dfRc=df[(df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ][["Comune_descrizione","Compr","Loc","Compr_min","Loc_min"]].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
 dfRc.rename(columns={"Compr": "ComprR","Loc": "LocR"},inplace=True)
 
-dfCc=df[(df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["Cod_Tip"]== 23) ].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
-dfCc.drop(columns=["Cod_Tip"],inplace=True)
+dfCc=df[(df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["Cod_Tip"]== 23) ][["Comune_descrizione","Compr","Loc","Compr_min","Loc_min"]].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
 dfCc.rename(columns={"Compr": "ComprC","Loc": "LocC"},inplace=True)
 
-dfTc=df[(df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18) ].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
-dfTc.drop(columns=["Cod_Tip"],inplace=True)
+dfTc=df[(df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18) ][["Comune_descrizione","Compr","Loc","Compr_min","Loc_min"]].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
 dfTc.rename(columns={"Compr": "ComprT","Loc": "LocT"},inplace=True)
 
-dfPc=df[(df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10) ].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
-dfPc.drop(columns=["Cod_Tip"],inplace=True)
+dfPc=df[(df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10) ][["Comune_descrizione","Compr","Loc","Compr_min","Loc_min"]].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
 dfPc.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
 
 dfTIc=pd.merge(dfRc,dfCc,on="Comune_descrizione",how="inner")
@@ -173,18 +157,21 @@ app = Dash(__name__, external_stylesheets=[])
 div_style = {
     'backgroundColor': '#f2f2f2',  # Grigio
     'borderRadius': '15px',  # Bordi arrotondati
-    'padding': '20px'  # Padding interno
+    'padding': '20px',  # Padding interno
+    'font-family':'Trebuchet MS'
 }
+
+
 
 # Contenuto del div
 div_content = html.Div(
     [
-        html.H3('Dataset OMI(Osservatorio sul mercato Immobiliare)',style={'font-family': 'sans-serif'}),
+        html.H3('Dataset OMI(Osservatorio sul mercato Immobiliare)',style={'font-family':'Trebuchet MS'}),
         html.P(["il Dataset contiene i dati relativi alle quotazioni immobiliari del secondo semestre del 2022. "
-               "Per ogni zona territoriale delimitata di ciascun comune",html.Span("(Zona OMI)",style={'fontWeight': 'bold'}),
-               ". Le quotazioni OMI, disponibili in un semestre, sono relative ai comuni censiti negli archivi catastali, , le quotazioni OMI non possono intendersi sostitutive della stima puntuale, in quanto forniscono indicazioni di valore di larga massima"
-               "sono prensenti diversi dati",
-               html.Ul([
+               "Per ogni zona territoriale delimitata di ciascun comune ",html.Span("(Zona OMI)",style={'fontWeight': 'bold'}),
+               ". Le quotazioni OMI, disponibili in un semestre, sono relative ai comuni censiti negli archivi catastali, le quotazioni OMI non possono intendersi sostitutive della stima puntuale, in quanto forniscono indicazioni di valore di larga massima"
+               ", per ogni comune ci sono diverse informazioni:",
+            html.Ul([
             html.Li([html.B("Area_territoriale: "), "Area territoriale in cui si trova l'immobile"]),
             html.Li([html.Span("Regione: ",style={'fontWeight': 'bold'}),"Regione in cui si trova l'immobile"]),
             html.Li([html.Span("Prov: ",style={'fontWeight': 'bold'}),"Provincia in cui si trova l'immobile"]),
@@ -202,45 +189,56 @@ div_content = html.Div(
             html.Li([html.Span("Sup_NL_compr: ",style={'fontWeight': 'bold'}),"Superficie Lorda (L) o Netta (N) su cui viene calcolato il costo per l'acquisto dell'immobile"]),
             html.Li([html.Span("Loc_max & Loc_min: ",style={'fontWeight': 'bold'}),"intervallo massimo/minimo, per unità di superficie in euro a metro quadro per l'affitto dell'immobile" ]),
             html.Li([html.Span("Sup_NL_loc: ",style={'fontWeight': 'bold'}),"Superficie Lorda (L) o Netta (N) su cui viene calcolato il costo per l'affitto dell'immobile"])
-        ])],style={'font-family': 'sans-serif'}),
+        ])]),
+        html.P(["Per calcolare i valori  medi dei prezzi divisi per regione, provincia o comune vengono utilizzati come valori ",html.Span("Loc_max e Compr_max",style={'fontWeight': 'bold'})])
+
         # Puoi aggiungere altri componenti HTML qui
     ],
     style=div_style
 )
 
 app.layout =html.Div([
-    html.H1('Analisi prezzi degli Immobili',style={ 'text-align': 'center','font-family': 'sans-serif'}),
+    html.H1('Analisi prezzi degli Immobili',style={ 'text-align': 'center'}),
     html.Div(div_content),
-    html.H1('Prezzi degli Immobili',style={ 'text-align': 'center','font-family': 'sans-serif'}),
-    html.P('Seleziona il tipo di Edificio:',style={ 'text-align': 'center','font-family': 'sans-serif'}),
+    html.H1('Prezzi degli Immobili',style={ 'text-align': 'center'}),
+     dcc.RadioItems(
+        id='sceltaMappa', 
+        options=[
+        {'label': 'Compravendita', 'value': 'cmp'},
+        {'label': 'Locazione', 'value': 'loc'}],
+        value="cmp",
+        style={ 'text-align': 'center',"margin-top": "50px"},
+        inline=True
+    ),
+    html.H2('Seleziona il tipo di Edificio:',style={ 'text-align': 'center'}),
     dcc.RadioItems(
         id='Tipo', 
         options=[{'label': 'Tutti', 'value': 'Tutti'},
-        {'label': 'Residenziale', 'value': 'ComprR'},
-        {'label': 'Commerciale', 'value': 'ComprC'},
-        {'label': 'Terziaria', 'value': 'ComprT'},
-        {'label': 'Produttiva', 'value': 'ComprP'}],
+        {'label': 'Residenziale', 'value': 'R'},
+        {'label': 'Commerciale', 'value': 'C'},
+        {'label': 'Terziaria', 'value': 'T'},
+        {'label': 'Produttiva', 'value': 'P'}],
         value="Tutti",
-        style={ 'text-align': 'center','font-family': 'sans-serif'},
+        style={ 'text-align': 'center'},
         inline=True
     ),
     dcc.Graph(id='graph2'),
-    html.P("Seleziona la Regione",style={ 'text-align': 'center','font-family': 'sans-serif'}),
-    dcc.Dropdown(options=regions, value='ABRUZZO', id='Reg',style={'font-family': 'sans-serif'}),
+    html.P("Seleziona la Regione",style={ 'text-align': 'center'}),
+    dcc.Dropdown(options=regions, value='ABRUZZO', id='Reg'),
     dcc.RadioItems(
         id='scelta', 
         options=[
         {'label': 'Compravendita', 'value': 'cmp'},
         {'label': 'Locazione', 'value': 'loc'}],
         value="cmp",
-        style={ 'text-align': 'center','font-family': 'sans-serif'},
-        inline=True
+        inline=True,
+        style={'text-align': 'center'}
     ),
-    html.H1(id="nameProv",style={'text-align': 'center','font-family': 'sans-serif'}),
+    html.H1(id="nameProv",style={'text-align': 'center'}),
     html.Div([
         html.Div([
-            html.H2('Regione',style={'font-family': 'sans-serif','text-align': 'center'}),
-            html.H3('Scegli la zona',style={'font-family': 'sans-serif','text-align': 'center'}),
+            html.H2('Regione',style={'text-align': 'center'}),
+            html.H3('Scegli la zona',style={'text-align': 'center'}),
             dcc.RadioItems(
                 id='sezR', 
                 options=[{'label':'Tutte le Zone','value':'Tutto'},
@@ -249,16 +247,16 @@ app.layout =html.Div([
                 {'label': 'Suburbana', 'value': 'E'},
                 {'label': 'Extraurbana', 'value': 'R'}],
                 value="Tutto",
-                style={ 'text-align': 'center','font-family': 'sans-serif',"margin-bottom": "100px"},
+                style={ 'text-align': 'center',"margin-bottom": "40px"},
                 inline=True
             ),
             #html.H2(id="ZonaStamp",style={'font-family': 'sans-serif','text-align': 'center'}),
             dcc.Graph(id='graph')
         ], className="six columns",style={'width': '48%', 'display': 'inline-block', 'padding': '1%'}),
         html.Div([
-            dcc.Tabs(id="table-1",value="table-box",style={'font-family': 'sans-serif'},children=[
+            html.H2('Provincia',style={'text-align': 'center'}),
+            dcc.Tabs(id="table-1",value="table-box",children=[
                 dcc.Tab(label="Box Plot Province", value="table-box",children=[        
-                    html.H2('Provincia',style={'font-family': 'sans-serif','text-align': 'center'}),
                     dcc.RadioItems(
                         id='sezP', 
                         options=[{'label':'Tutte le Zone','value':'Tutto'},
@@ -267,7 +265,7 @@ app.layout =html.Div([
                         {'label': 'Suburbana', 'value': 'E'},
                         {'label': 'Extraurbana', 'value': 'R'}],
                         value="Tutto",
-                        style={ 'text-align': 'center','font-family': 'sans-serif'},
+                        style={ 'text-align': 'center'},
                         inline=True
                     ),
                     dcc.Graph(id='graph3')
@@ -280,12 +278,19 @@ app.layout =html.Div([
         ], className="six columns",style={'width': '48%', 'display': 'inline-block', 'padding': '1%'}
         ),
     ], className="row"),
-    html.H2('Comuni',style={'font-family': 'sans-serif','text-align': 'center'}),
+    html.H2('Comuni',style={'text-align': 'center'}),
     dcc.Graph(id="graph4"),
-    html.P("Seleziona il comune",style={'font-family': 'sans-serif','text-align': 'center'}),
-    dcc.Dropdown(id='CommD',style={'font-family': 'sans-serif'},value="ABBATEGGIO"),
-    html.H2(id="Com",style={'font-family': 'sans-serif','text-align': 'center'}),
-    dcc.Graph(id="graph5")
+    html.P("Seleziona il comune",style={'text-align': 'center'}),
+    dcc.Dropdown(id='CommD',value="ABBATEGGIO"),
+    html.H2(id="Com",style={'text-align': 'center'}),
+    dcc.Tabs(id="table-2",value="table-dot",children=[
+        dcc.Tab(label="Dot Plot Comune", value="table-dot",children=[        
+            dcc.Graph(id='DotP')
+        ]),
+        dcc.Tab(label="Box Plot Comune", value="table-box", children=[
+            dcc.Graph(id='BoxP')      
+        ])
+    ]),
 
 ])
 
@@ -293,30 +298,50 @@ app.layout =html.Div([
 @app.callback(
     Output("graph2", "figure"), 
     Input("graph2", "clickData"),
-    Input("Tipo", "value"))
-def display_choropleth(clickData,Tipo):
+    Input("Tipo", "value"),
+    Input("sceltaMappa","value"))
+def display_choropleth(clickData,Tipo,scelta):
+    dfMappa=pd.DataFrame()
+    dfMappa["Regione"]=dfRegion["Regione"]
+    
     if Tipo=="Tutti":
-        figm = go.Figure(data=go.Choropleth(
-        geojson=gj, 
-        z=dfRegion["Compr"],
-        text=dfRegion["Compr"],
-        locations=dfRegion["Regione"], 
-        featureidkey="properties.name",
-        colorscale ="Blues",
-        colorbar_tickprefix = '€',
-        colorbar_title = 'Prezzo Medio<br>Compravendita  €',
-        ))
-    else:
-        figm = go.Figure(data=go.Choropleth(
-        geojson=gj, 
-        z=dfTI2[Tipo],
-        text=dfTI2[Tipo],
-        locations=dfTI2["Regione"], 
-        featureidkey="properties.name",
-        colorscale ="Blues",
-        colorbar_tickprefix = '€',
-        colorbar_title = 'Prezzo Medio<br>Compravendita  €',
-        ))
+        if scelta=="cmp":
+            dfMappa["Value"]=dfRegion["Compr"]
+        else:
+            dfMappa["Value"]=dfRegion["Loc"]
+    elif Tipo=="R":
+        if scelta=="cmp":
+            dfMappa["Value"]=dfTI2["ComprR"]
+        else:
+            dfMappa["Value"]=dfTI2["LocR"]
+    elif Tipo=="C":
+        if scelta=="cmp":
+            dfMappa["Value"]=dfTI2["ComprC"]
+        else:
+            dfMappa["Value"]=dfTI2["LocC"]
+    elif Tipo=="T":
+        if scelta=="cmp":
+            dfMappa["Value"]=dfTI2["ComprT"]
+        else:
+            dfMappa["Value"]=dfTI2["LocT"]
+    elif Tipo=="P":
+        if scelta=="cmp":
+            dfMappa["Value"]=dfTI2["ComprP"]
+        else:
+            dfMappa["Value"]=dfTI2["LocP"]
+    
+
+
+    figm = go.Figure(data=go.Choropleth(
+    geojson=gj, 
+    z=dfMappa["Value"],
+    text=dfMappa["Value"],
+    locations=dfMappa["Regione"], 
+    featureidkey="properties.name",
+    colorscale ="Blues",
+    colorbar_tickprefix = '€',
+    colorbar_title = 'Prezzo Medio<br>Compravendita  €',
+    ))
     figm.update_geos(fitbounds="locations", visible=False,center=None, projection_scale=3)
     figm.update_layout(margin={"r":0,"t":0,"l":0,"b":0},dragmode=False)
     if clickData:
@@ -360,7 +385,7 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
         Region=clickData["points"][0]["location"].upper()
         OldClick=clickData["points"][0]["location"].upper()
 
-    x=["Residenziale","Commerciale","Terziaria", "Produttiva"]
+    x=["Residenziale","Commerciale","Terziario", "Produttivo"]
 
     
         # Prezzi Compravendita
@@ -555,8 +580,8 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
         fig2 = go.Figure(data=[
             go.Bar(name='Residenziale', x=dfR["Prov"], y=dfR["ComprR"],text=dfR["ComprR"]),
             go.Bar(name='Commerciale', x=dfC["Prov"], y=dfC["ComprC"],text=dfC["ComprC"]),
-            go.Bar(name='Terziaria', x=dfT["Prov"], y=dfT["ComprT"],text=dfT["ComprT"]),
-            go.Bar(name='Produttiva', x=dfP["Prov"], y=dfP["ComprP"],text=dfP["ComprP"]) 
+            go.Bar(name='Terziario', x=dfT["Prov"], y=dfT["ComprT"],text=dfT["ComprT"]),
+            go.Bar(name='Produttivo', x=dfP["Prov"], y=dfP["ComprP"],text=dfP["ComprP"]) 
         ])
     else:
 
@@ -573,8 +598,8 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
         fig2 = go.Figure(data=[
             go.Bar(name='Residenziale', x=dfR["Prov"], y=dfR["LocR"],text=dfR["LocR"]),
             go.Bar(name='Commerciale', x=dfC["Prov"], y=dfC["LocC"],text=dfC["LocC"]),
-            go.Bar(name='Terziaria', x=dfT["Prov"], y=dfT["LocT"],text=dfT["LocT"]),
-            go.Bar(name='Produttiva', x=dfP["Prov"], y=dfP["LocP"],text=dfP["LocP"]) 
+            go.Bar(name='Terziario', x=dfT["Prov"], y=dfT["LocT"],text=dfT["LocT"]),
+            go.Bar(name='Produttivo', x=dfP["Prov"], y=dfP["LocP"],text=dfP["LocP"]) 
         ])
 
 # Change the bar mode
@@ -656,7 +681,8 @@ def displayGraph(clickData,Reg,scelta):
 
 @app.callback(
     Output("Com", "children"), 
-    Output("graph5","figure"),
+    Output("BoxP","figure"),
+    Output("DotP","figure"),
     Input("graph4", "clickData"),
     Input("CommD","value"),
     Input("scelta","value"))
@@ -679,42 +705,61 @@ def display_BarPlot(clickData,Comm,scelta):
         Comu=clickData["points"][0]['y'].upper()
         OldClick3=clickData["points"][0]['y'].upper()
    
-    x=["Residenziale","Commerciale","Terziaria", "Produttiva"]
+    x=["Residenziale","Commerciale","Terziario", "Produttivo"]
     if scelta=="cmp":
         if len(dfRc[dfRc["Comune_descrizione"]==Comu]["ComprR"].tolist())==0:
             Res=0
+            Resmin=0
         else:
             Res=dfRc[dfRc["Comune_descrizione"]==Comu]["ComprR"].item()
+            Resmin=dfRc[dfRc["Comune_descrizione"]==Comu]["Compr_min"].item()
         if len(dfCc[dfCc["Comune_descrizione"]==Comu]["ComprC"].tolist())==0:
             Comm=0
+            Commmin=0
         else:
             Comm=dfCc[dfCc["Comune_descrizione"]==Comu]["ComprC"].item()
+            Commmin=dfCc[dfCc["Comune_descrizione"]==Comu]["Compr_min"].item()
         if len(dfTc[dfTc["Comune_descrizione"]==Comu]["ComprT"].tolist())==0:
             Terz=0
+            Terzmin=0
         else:
             Terz=dfTc[dfTc["Comune_descrizione"]==Comu]["ComprT"].item()
+            Terzmin=dfTc[dfTc["Comune_descrizione"]==Comu]["Compr_min"].item()
+
         if len(dfPc[dfPc["Comune_descrizione"]==Comu]["ComprP"].tolist())==0:
             Prod=0
+            Prodmin=0
         else:
             Prod=dfPc[dfPc["Comune_descrizione"]==Comu]["ComprP"].item()
+            Prodmin=dfPc[dfPc["Comune_descrizione"]==Comu]["Compr_min"].item()
     else:
         if len(dfRc[dfRc["Comune_descrizione"]==Comu]["LocR"].tolist())==0:
             Res=0
+            Resmin=0
         else:
             Res=dfRc[dfRc["Comune_descrizione"]==Comu]["LocR"].item()
+            Resmin=dfRc[dfRc["Comune_descrizione"]==Comu]["Loc_min"].item()
         if len(dfCc[dfCc["Comune_descrizione"]==Comu]["LocC"].tolist())==0:
             Comm=0
+            Commmin=0
         else:
             Comm=dfCc[dfCc["Comune_descrizione"]==Comu]["LocC"].item()
+            Commmin=dfCc[dfCc["Comune_descrizione"]==Comu]["Loc_min"].item()
+
         if len(dfTc[dfTc["Comune_descrizione"]==Comu]["LocT"].tolist())==0:
             Terz=0
+            Terzmin=0
         else:
             Terz=dfTc[dfTc["Comune_descrizione"]==Comu]["LocT"].item()
+            Terzmin=dfTc[dfTc["Comune_descrizione"]==Comu]["Loc_min"].item()
+
         if len(dfPc[dfPc["Comune_descrizione"]==Comu]["LocP"].tolist())==0:
             Prod=0
+            Prodmin=0
         else:
             Prod=dfPc[dfPc["Comune_descrizione"]==Comu]["LocP"].item()
-        
+            Prodmin=dfPc[dfPc["Comune_descrizione"]==Comu]["Loc_min"].item()
+            
     y=[Res,Comm,Terz,Prod]
     fig4 = go.Figure(data=[go.Bar(
             x=x, y=y,
@@ -725,7 +770,29 @@ def display_BarPlot(clickData,Comm,scelta):
     # Change the bar mode
     fig4.update_layout(barmode='group',xaxis=dict(title='Tipo di Immobile'),yaxis=dict(title='Prezzo medio al (m²)'),title="Immobili del Comune di "+Comu)
     fig4.update_traces(texttemplate='%{text:.2s}€', textposition='inside') 
-    return "Comune di: " + Comu,fig4
+    
+    x=["Residenziale","Commerciale","Terziario", "Produttivo"]
+    y=[(Resmin,Res),(Commmin,Comm),(Terzmin,Terz),(Prodmin,Prod)]
+    fig5=go.Figure(data=[
+        go.Scatter(
+        x=[interval[0], interval[1]],
+        y=[element, element],
+        mode='lines+markers',
+        name=element,
+        error_x=dict(
+            type='data',
+            symmetric=False,
+            array=[interval[1] - interval[0]],
+            arrayminus=[0]
+        )
+    ) for element, interval in zip(x, y)    
+    ])
+    fig5.update_layout(
+                xaxis=dict(title='Prezzo medio al (m²)',ticksuffix='€'),
+                yaxis=dict(title='Tipo di Immobile'),
+                showlegend=True) 
+    return "Comune di: " + Comu,fig4,fig5
+
 
 app.run_server(port=8052)
 
