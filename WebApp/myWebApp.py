@@ -21,6 +21,7 @@ with open("../limits_IT_provinces.geojson") as f:
 dfPV = pd.json_normalize(pI, meta=['nome','sigla','regione'])
 dfPV.drop(columns=['regione'],inplace=True)
 dfPV.columns = ['name', 'Prov']
+df["Prov"].fillna("NA",inplace=True)
 df=pd.merge(df,dfPV,on='Prov')
 df.drop(columns=['Prov'],inplace=True)
 df = df.rename(columns={'name': 'Prov'})
@@ -41,7 +42,7 @@ df["Compr_max"]=df["Compr_max"].astype(float)
 df["Compr_min"]=df["Compr_min"].fillna(0)
 df["Compr_max"]=df["Compr_max"].fillna(0)
 
-#  TEMPORARY substitute with 0
+#   substitute with 0
 df["Loc_min"]=df["Loc_min"].fillna(0)
 df["Loc_max"]=df["Loc_max"].fillna(0)
 
@@ -64,6 +65,7 @@ regionsMap= ['Piemonte', 'Trentino-alto adige/sudtirol', 'Lombardia', 'Puglia', 
            'Calabria', 'Toscana', 'Umbria', 'Campania', 'Marche']
 regions.sort()
 regionsMap.sort()
+
 ### DIVISO PER REGIONE 
 
 dfRegion=df.groupby("Regione")[["Compr","Loc"]].mean().reset_index()
@@ -91,11 +93,13 @@ dfTI=pd.merge(dfTI,dfP,on="Regione",how="inner")
 dfTI2=dfTI.copy()
 dfTI2["Regione"]=regionsMap
 
+
+#### DIVISO PER PROVINCIA
+
 ListaProv=df.groupby(["Prov","Regione"]).mean("Compr,Loc").reset_index()
 ListaProv=ListaProv.drop(columns=["Cod_Tip","Compr","Loc"])
 ProDiv=df.groupby(["Prov","Regione"]).mean("Compr,Loc").reset_index()
 
-#### DIVISO PER PROVINCIA
 dfRp=df[(df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ][["Prov","Compr","Loc"]].groupby("Prov").mean().reset_index()
 dfRp.rename(columns={"Compr": "ComprR","Loc": "LocR"},inplace=True)
 
@@ -132,15 +136,12 @@ dfPc=df[(df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10) ][["Com
 dfPc.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
 
 
-
-## COMUNE non diviso
-
 Commtot=dfcom.groupby(["Comune_descrizione","Prov","Regione"]).mean("Compr_max,Compr_min,Loc_min,Loc_max").reset_index()
 Commtot=Commtot.drop(columns=["Cod_Tip"])
 ####
 
 
-
+### Layout Dash app
 app = Dash(__name__, external_stylesheets=[])
 
 div_style = {
@@ -149,7 +150,6 @@ div_style = {
     'padding': '20px',  # Padding interno
     'font-family':'Trebuchet MS'
 }
-
 
 
 # Contenuto del div
@@ -165,12 +165,11 @@ div_content = html.Div(
             html.Li([html.Span("Regione: ",style={'fontWeight': 'bold'}),"Regione in cui si trova l'immobile"]),
             html.Li([html.Span("Prov: ",style={'fontWeight': 'bold'}),"Provincia in cui si trova l'immobile"]),
             html.Li([html.Span("Comune_ISTAT: ",style={'fontWeight': 'bold'})," Codice Istat del Comune dove si trova l'immobile"]),
-            html.Li([html.Span("Comune_cat: ",style={'fontWeight': 'bold'}),"Codice del catasto del Comune in cui si trova l'immobile"]),
-            html.Li(html.Span("Comune_amm: ",style={'fontWeight': 'bold'}),),
+            html.Li([html.Span("Comune_cat: ",style={'fontWeight': 'bold'}),"Codice del Comune "]),
+            html.Li(html.Span("Comune_amm: ",style={'fontWeight': 'bold'}),"Codice catastale del Comune"),
             html.Li([html.Span("Comune_descrizione: ",style={'fontWeight': 'bold'}),"Nome del Comune in cui si trova l'immobile"]),
             html.Li([html.Span("Fascia: ",style={'fontWeight': 'bold'}),"Una lettera che indica in quale fascia si trova l'immobile, tra fascia Centrale, Semicentrale, Periferica , Sub Urbana, Extra Urbana"]),
-            html.Li(html.Span("Zona: ",style={'fontWeight': 'bold'}),),
-            html.Li(html.Span("LinkZona: ",style={'fontWeight': 'bold'}),),
+            html.Li(html.Span("Zona: ",style={'fontWeight': 'bold'}),"Identifica una zona precisa all'interno della fascia"),
             html.Li([html.Span("Cod_Tip: ",style={'fontWeight': 'bold'}),"Codice univoco che corrisponde ad un certo tipo d'immobile"]),
             html.Li([html.Span("Descr_Tipologia: ",style={'fontWeight': 'bold'}),"Tipo dell'immobile preso in considerazione"]),
             html.Li([html.Span("Stato: ",style={'fontWeight': 'bold'}),"Stato di conservazione dell'immobile: Normale, Ottimo e"]),
@@ -181,7 +180,6 @@ div_content = html.Div(
         ])]),
         html.P(["Per calcolare i valori  medi dei prezzi divisi per regione, provincia o comune vengono utilizzati come valori ",html.Span("Loc_max e Compr_max",style={'fontWeight': 'bold'})])
 
-        # Puoi aggiungere altri componenti HTML qui
     ],
     style=div_style
 )
@@ -211,6 +209,7 @@ app.layout =html.Div([
         style={ 'text-align': 'center'},
         inline=True
     ),
+   # html.Button('Reset', id='btn-Reset', n_clicks=0,className="button3"),
     dcc.Graph(id='graph2'),
     html.P("Seleziona la Regione",style={ 'text-align': 'center'}),
     dcc.Dropdown(options=regions, value='ABRUZZO', id='Reg'),
@@ -283,7 +282,7 @@ app.layout =html.Div([
 
 ])
 
-############################# MAPPA ##############################
+############################# MAPPA  REGIONI ##############################
 @app.callback(
     Output("graph2", "figure"), 
     Input("graph2", "clickData"),
@@ -339,7 +338,10 @@ def display_choropleth(clickData,Tipo,scelta):
                               selected=dict(marker=dict(opacity=0.8)))
         
     return figm
- 
+
+
+
+
 
 
 ################ CLICK ON MAP ################################
@@ -380,58 +382,50 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
         # Prezzi Compravendita
     if sezR=="Tutto":
         if(scelta=="cmp"):
-            title="Prezzo medio Compravendita Immobili"
+            title="Prezzo medio Compravendita Immobili Regione " + Region
             y=[dfTI[dfTI["Regione"]==Region]["ComprR"].item(),dfTI[dfTI["Regione"]==Region]["ComprC"].item(),dfTI[dfTI["Regione"]==Region]["ComprT"].item(),dfTI[dfTI["Regione"]==Region]["ComprP"].item()]
         else:
-            title="Prezzo medio Locazione Immobili"
+            title="Prezzo medio Locazione  Regione " + Region
             y=[dfTI[dfTI["Regione"]==Region]["LocR"].item(),dfTI[dfTI["Regione"]==Region]["LocC"].item(),dfTI[dfTI["Regione"]==Region]["LocT"].item(),dfTI[dfTI["Regione"]==Region]["LocP"].item()]
     elif sezR=="C":
         
-        dfR=df[((df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ) &  ((df["Fascia"]=="C") | (df["Fascia"]=="B")) ].groupby("Regione").mean("Compr,Loc").reset_index()
-        dfR.drop(columns=["Cod_Tip"],inplace=True)
+        dfR=df[((df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ) &  ((df["Fascia"]=="C") | (df["Fascia"]=="B")) ][["Regione","Compr","Loc"]].groupby("Regione").mean().reset_index()
         dfR.rename(columns={"Compr": "ComprR","Loc": "LocR"},inplace=True)
         
-        dfC=df[((df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["Cod_Tip"]== 23)) &  ((df["Fascia"]=="C") | (df["Fascia"]=="B")) ].groupby("Regione").mean("Compr,Loc").reset_index()
-        dfC.drop(columns=["Cod_Tip"],inplace=True)
+        dfC=df[((df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["Cod_Tip"]== 23)) &  ((df["Fascia"]=="C") | (df["Fascia"]=="B")) ][["Regione","Compr","Loc"]].groupby("Regione").mean().reset_index()
         dfC.rename(columns={"Compr": "ComprC","Loc": "LocC"},inplace=True)
         
-        dfT=df[((df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18)) &  ((df["Fascia"]=="C") | (df["Fascia"]=="B")) ].groupby("Regione").mean("Compr,Loc").reset_index()
-        dfT.drop(columns=["Cod_Tip"],inplace=True)
+        dfT=df[((df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18)) &  ((df["Fascia"]=="C") | (df["Fascia"]=="B")) ][["Regione","Compr","Loc"]].groupby("Regione").mean().reset_index()
         dfT.rename(columns={"Compr": "ComprT","Loc": "LocT"},inplace=True)
         
-        dfP=df[((df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10)) &  ((df["Fascia"]=="C") | (df["Fascia"]=="B")) ].groupby("Regione").mean("Compr,Loc").reset_index()
-        dfP.drop(columns=["Cod_Tip"],inplace=True)
+        dfP=df[((df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10)) &  ((df["Fascia"]=="C") | (df["Fascia"]=="B")) ][["Regione","Compr","Loc"]].groupby("Regione").mean().reset_index()
         dfP.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
 
         if(scelta=="cmp"):
-            title="Prezzo Medio di Compravendita Immobili in zona Centrale"
+            title="Prezzo medio Compravendita Immobili in zona Centrale Regione " + Region
             y=[dfR[dfR["Regione"]==Region]["ComprR"].item(),dfC[dfC["Regione"]==Region]["ComprC"].item(),dfT[dfT["Regione"]==Region]["ComprT"].item(),dfP[dfP["Regione"]==Region]["ComprP"].item()]
         else:
-            title="Prezzo Medio di Locazione Immobili in zona Centrale"
+            title="Prezzo medio Locazione Immobili in zona Centrale Regione " + Region
             y=[dfR[dfR["Regione"]==Region]["LocR"].item(),dfC[dfC["Regione"]==Region]["LocC"].item(),dfT[dfT["Regione"]==Region]["LocT"].item(),dfP[dfP["Regione"]==Region]["LocP"].item()]
     else:
-        dfR=df[((df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ) &  (df["Fascia"]==sezR) ].groupby("Regione").mean("Compr,Loc").reset_index()
-        dfR.drop(columns=["Cod_Tip"],inplace=True)
+        dfR=df[((df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ) &  (df["Fascia"]==sezR) ][["Regione","Compr","Loc"]].groupby("Regione").mean().reset_index()
         dfR.rename(columns={"Compr": "ComprR","Loc": "LocR"},inplace=True)
     
-        dfC=df[((df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["Cod_Tip"]== 23)) & (df["Fascia"]==sezR) ].groupby("Regione").mean("Compr,Loc").reset_index()
-        dfC.drop(columns=["Cod_Tip"],inplace=True)
+        dfC=df[((df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["Cod_Tip"]== 23)) & (df["Fascia"]==sezR) ][["Regione","Compr","Loc"]].groupby("Regione").mean().reset_index()
         dfC.rename(columns={"Compr": "ComprC","Loc": "LocC"},inplace=True)
     
-        dfT=df[((df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18)) &  (df["Fascia"]==sezR) ].groupby("Regione").mean("Compr,Loc").reset_index()
-        dfT.drop(columns=["Cod_Tip"],inplace=True)
+        dfT=df[((df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18)) &  (df["Fascia"]==sezR) ][["Regione","Compr","Loc"]].groupby("Regione").mean().reset_index()
         dfT.rename(columns={"Compr": "ComprT","Loc": "LocT"},inplace=True)
    
-        dfP=df[((df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10)) &  (df["Fascia"]==sezR) ].groupby("Regione").mean("Compr,Loc").reset_index()
-        dfP.drop(columns=["Cod_Tip"],inplace=True)
+        dfP=df[((df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10)) &  (df["Fascia"]==sezR) ][["Regione","Compr","Loc"]].groupby("Regione").mean().reset_index()
         dfP.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
         if(scelta=="cmp"):
             if sezR=="D":
-                title="Prezzo Medio di Compravendita Immobili in zona Periferica"
+                title="Prezzo medio Compravendita Immobili in zona Periferica Regione " + Region
             elif sezR=="E":
-                title="Prezzo Medio di Compravendita Immobili in Zona Suburbana"
+                title="Prezzo medio Compravendita Immobili in Zona Suburbana Regione " + Region
             elif sezR=="R":
-                title="Prezzo Medio di Compravendita Immobili in zona Extraurbana"
+                title="Prezzo medio Compravendita Immobili in zona Extraurbana Regione " + Region
             if len(dfR[dfR["Regione"]==Region]["ComprR"].tolist())==0:
                 Res=0
             else: 
@@ -456,11 +450,11 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
             y=[Res,Com,Ter,Pro]
         else:
             if sezR=="D":
-                title="Prezzo Medio di Locazione Immobili in zona Periferica"
+                title="Prezzo medio Locazione Immobili in zona Periferica Regione " + Region
             elif sezR=="E":
-                title="Prezzo Medio di Locazione Immobili in Zona Suburbana"
+                title="Prezzo medio Locazione Immobili in Zona Suburbana Regione " + Region
             elif sezR=="R":
-                title="Prezzo Medio di Locazione Immobili in zona Extraurbana"
+                title="Prezzo medio Locazione Immobili in zona Extraurbana Regione " + Region
             
             if len(dfR[dfR["Regione"]==Region]["LocR"].tolist())==0:
                 Res=0
@@ -496,8 +490,6 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
 
     List=ListaProv[ListaProv["Regione"]==Region]["Prov"].to_list()
     ListC=ListaComm[ListaComm["Regione"]==Region]["Comune_descrizione"].to_list()
-    dfTIpnew=dfTIp.query("Prov in @List")
-
     dfProv=df.query("Prov in @List")
     
 
@@ -556,15 +548,15 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
     
     if(scelta=="cmp"):
         if sezP=="Tutto":
-            titlep="Prezzo Medio di Compravendita Immobili per Province"
+            titlep="Prezzo medio  Compravendita Immobili per Province"
         elif sezP=="C":
-            titlep="Prezzo Medio di Compravendita Immobili in zona Centrale per Province"
+            titlep="Prezzo medio  Compravendita Immobili in zona Centrale per Province"
         elif sezP=="D":
-            titlep="Prezzo Medio di Compravendita Immobili in zona Periferica per Province"
+            titlep="Prezzo medio  Compravendita Immobili in zona Periferica per Province"
         elif sezP=="E":
-            titlep="Prezzo Medio di Compravendita Immobili in Zona Suburbana per Province"
+            titlep="Prezzo medio  Compravendita Immobili in Zona Suburbana per Province"
         elif sezP=="R":
-            titlep="Prezzo Medio di Compravendita Immobili in zona Extraurbana  per Province"    
+            titlep="Prezzo medio Compravendita Immobili in zona Extraurbana  per Province"    
 
         fig2 = go.Figure(data=[
             go.Bar(name='Residenziale', x=dfR["Prov"], y=dfR["ComprR"],text=dfR["ComprR"]),
@@ -575,15 +567,15 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
     else:
 
         if sezP=="Tutto":
-            titlep="Prezzo Medio di Locazione Immobili per Province"
+            titlep="Prezzo medio Locazione Immobili per Province"
         elif sezP=="C":
-            titlep="Prezzo Medio di Locazione Immobili in zona Centrale per Province"
+            titlep="Prezzo medio Locazione Immobili in zona Centrale per Province"
         elif sezP=="D":
-            titlep="Prezzo Medio di Locazione Immobili in zona Periferica per Province"
+            titlep="Prezzo medio Locazione Immobili in zona Periferica per Province"
         elif sezP=="E":
-            titlep="Prezzo Medio di Locazione Immobili in Zona Suburbana per Province"
+            titlep="Prezzo medio Locazione Immobili in Zona Suburbana per Province"
         elif sezP=="R":
-            titlep="Prezzo Medio di Locazione Immobili in zona Extraurbana per Province"  
+            titlep="Prezzo medio Locazione Immobili in zona Extraurbana per Province"  
         fig2 = go.Figure(data=[
             go.Bar(name='Residenziale', x=dfR["Prov"], y=dfR["LocR"],text=dfR["LocR"]),
             go.Bar(name='Commerciale', x=dfC["Prov"], y=dfC["LocC"],text=dfC["LocC"]),
@@ -624,7 +616,7 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
     return fig,fig2,mappa,ListC,Region
 
 
-### DECIDERE COSA FARE ############################### GRAFICO COMUNI
+############################### GRAFICO COMUNI ###################
 @app.callback(
     Output("graph4", "figure"), 
     Input("graph2", "clickData"),
@@ -666,7 +658,7 @@ def displayGraph(clickData,Reg,scelta):
     return fig3
     
 
-##### GRAFICO COMUNE ####################################
+##### GRAFICO SINGOLO COMUNE ####################################
 
 @app.callback(
     Output("Com", "children"), 
