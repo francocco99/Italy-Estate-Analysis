@@ -4,7 +4,7 @@ import pandas as pd
 import json
 import plotly.graph_objects as go
 
-
+# Reading the dataset and the Maps geojson
 df=pd.read_csv('../Valori.csv',sep=';',skiprows=1)
 
 with open("../italy-with-regions_1458.geojson") as f:
@@ -17,13 +17,17 @@ with open("../province-italia.json") as f:
 with open("../limits_IT_provinces.geojson") as f:
     gprov = json.load(f)
 
+# Used for the province map
 dfPV = pd.json_normalize(pI, meta=['nome','sigla','regione'])
 dfPV.drop(columns=['regione'],inplace=True)
 dfPV.columns = ['name', 'Prov']
-
 df=pd.merge(df,dfPV,on='Prov')
 df.drop(columns=['Prov'],inplace=True)
 df = df.rename(columns={'name': 'Prov'})
+
+
+# Data Exploring
+# Drop Useless attributes
 df.drop(['Comune_ISTAT','Comune_cat','LinkZona','Stato_prev','Comune_amm','Sup_NL_compr','Sup_NL_loc','Unnamed: 21'],axis=1,inplace=True)
 df["Loc_min"] = df["Loc_min"].replace(',', '.', regex=True)
 df["Loc_max"] = df["Loc_max"].replace(',', '.', regex=True)
@@ -32,17 +36,18 @@ df["Loc_max"]=df["Loc_max"].astype(float)
 
 df["Compr_min"]=df["Compr_min"].astype(float)
 df["Compr_max"]=df["Compr_max"].astype(float)
+
+# Substitute with 0 only 11 elements
 df["Compr_min"]=df["Compr_min"].fillna(0)
 df["Compr_max"]=df["Compr_max"].fillna(0)
 
+#  TEMPORARY substitute with 0
 df["Loc_min"]=df["Loc_min"].fillna(0)
 df["Loc_max"]=df["Loc_max"].fillna(0)
 
 
 
-
-### DIVISO PER REGIONE
-#df.drop(['Compr_min','Compr_max','Loc_min','Loc_max'],axis=1,inplace=True)
+### Divided by Regiom PER REGIONE
 df.loc[df["Regione"]=="VALLE D'AOSTA/VALLE`E D'AOSTE","Regione"]="VALLE D'AOSTA"
 df.loc[df["Regione"]=="TRENTINO-ALTO ADIGE","Regione"]="TRENTINO-ALTO ADIGE/SUDTIROL"
 df.loc[df["Regione"]=="FRIULI-VENEZIA GIULIA","Regione"]="FRIULI VENEZIA GIULIA"
@@ -51,15 +56,13 @@ dfcom=df.copy()
 df.rename(columns={"Compr_max": "Compr","Loc_max": "Loc"},inplace=True)
 
 
-
-
 regions=df["Regione"].unique().tolist()
+# regionsMap is used for create the chroplet map 
 regionsMap= ['Piemonte', 'Trentino-alto adige/sudtirol', 'Lombardia', 'Puglia', 'Basilicata', 
            'Friuli venezia giulia', 'Liguria', "Valle d'aosta", 'Emilia-romagna',
            'Molise', 'Lazio', 'Veneto', 'Sardegna', 'Sicilia', 'Abruzzo',
            'Calabria', 'Toscana', 'Umbria', 'Campania', 'Marche']
 regions.sort()
-
 regionsMap.sort()
 ### DIVISO PER REGIONE 
 
@@ -68,53 +71,41 @@ dfRegionUp=dfRegion.copy()
 dfRegion["Regione"]=regionsMap
 
 
-dfR=df[(df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ].groupby("Regione").mean("Compr,Loc").reset_index()
-dfR.drop(columns=["Cod_Tip"],inplace=True)
+dfR=df[(df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ][["Regione","Compr","Loc"]].groupby("Regione").mean().reset_index()
 dfR.rename(columns={"Compr": "ComprR","Loc": "LocR"},inplace=True)
 
-dfC=df[(df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["Cod_Tip"]== 23) ].groupby("Regione").mean("Compr,Loc").reset_index()
-dfC.drop(columns=["Cod_Tip"],inplace=True)
+dfC=df[(df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["Cod_Tip"]== 23) ][["Regione","Compr","Loc"]].groupby("Regione").mean("Compr,Loc").reset_index()
 dfC.rename(columns={"Compr": "ComprC","Loc": "LocC"},inplace=True)
 
-dfT=df[(df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18) ].groupby("Regione").mean("Compr,Loc").reset_index()
-dfT.drop(columns=["Cod_Tip"],inplace=True)
+dfT=df[(df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18) ][["Regione","Compr","Loc"]].groupby("Regione").mean("Compr,Loc").reset_index()
 dfT.rename(columns={"Compr": "ComprT","Loc": "LocT"},inplace=True)
 
-dfP=df[(df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10) ].groupby("Regione").mean("Compr,Loc").reset_index()
-dfP.drop(columns=["Cod_Tip"],inplace=True)
+dfP=df[(df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10) ][["Regione","Compr","Loc"]].groupby("Regione").mean("Compr,Loc").reset_index()
 dfP.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
-
 
 
 dfTI=pd.merge(dfR,dfC,on="Regione",how="inner")
 dfTI=pd.merge(dfTI,dfT,on="Regione",how="inner")
 dfTI=pd.merge(dfTI,dfP,on="Regione",how="inner")
 
-
 dfTI2=dfTI.copy()
 dfTI2["Regione"]=regionsMap
 
-
 ListaProv=df.groupby(["Prov","Regione"]).mean("Compr,Loc").reset_index()
 ListaProv=ListaProv.drop(columns=["Cod_Tip","Compr","Loc"])
-
 ProDiv=df.groupby(["Prov","Regione"]).mean("Compr,Loc").reset_index()
 
 #### DIVISO PER PROVINCIA
-dfRp=df[(df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ].groupby("Prov").mean("Compr,Loc").reset_index()
-dfRp.drop(columns=["Cod_Tip"],inplace=True)
+dfRp=df[(df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ][["Prov","Compr","Loc"]].groupby("Prov").mean().reset_index()
 dfRp.rename(columns={"Compr": "ComprR","Loc": "LocR"},inplace=True)
 
-dfCp=df[(df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["Cod_Tip"]== 23) ].groupby("Prov").mean("Compr,Loc").reset_index()
-dfCp.drop(columns=["Cod_Tip"],inplace=True)
+dfCp=df[(df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["Cod_Tip"]== 23) ][["Prov","Compr","Loc"]].groupby("Prov").mean().reset_index()
 dfCp.rename(columns={"Compr": "ComprC","Loc": "LocC"},inplace=True)
 
-dfTp=df[(df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18) ].groupby("Prov").mean("Prova").reset_index()
-dfTp.drop(columns=["Cod_Tip"],inplace=True)
+dfTp=df[(df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18) ][["Prov","Compr","Loc"]].groupby("Prov").mean().reset_index()
 dfTp.rename(columns={"Compr": "ComprT","Loc": "LocT"},inplace=True)
 
-dfPp=df[(df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10) ].groupby("Prov").mean("Compr,Loc").reset_index()
-dfPp.drop(columns=["Cod_Tip"],inplace=True)
+dfPp=df[(df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10) ][["Prov","Compr","Loc"]].groupby("Prov").mean().reset_index()
 dfPp.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
 
 dfTIp=pd.merge(dfRp,dfCp,on="Prov",how="inner")
@@ -123,14 +114,15 @@ dfTIp=pd.merge(dfTIp,dfPp,on="Prov",how="inner")
 
 #####
 
-ListaComm=dfcom.groupby(["Comune_descrizione","Prov","Regione"]).mean("Compr_max,Compr_min,Loc_min,Loc_max").reset_index()
-ListaComm=ListaComm.drop(columns=["Compr_min","Loc_min","Compr_max","Loc_max"])
+
 
 ### DIVISO PER COMUNE
+ListaComm=dfcom.groupby(["Comune_descrizione","Prov","Regione"]).mean("Compr_max,Compr_min,Loc_min,Loc_max").reset_index()
+ListaComm=ListaComm.drop(columns=["Compr_min","Loc_min","Compr_max","Loc_max"])
 dfRc=df[(df["Cod_Tip"]== 20) | (df["Cod_Tip"]== 19) | (df["Cod_Tip"]== 1) | (df["Cod_Tip"]== 14) | (df["Cod_Tip"]== 15) | (df["Cod_Tip"]== 21) | (df["Cod_Tip"]== 13) | (df["Cod_Tip"]== 22) | (df["Cod_Tip"]== 16) ][["Comune_descrizione","Compr","Loc","Compr_min","Loc_min"]].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
 dfRc.rename(columns={"Compr": "ComprR","Loc": "LocR"},inplace=True)
 
-dfCc=df[(df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["Cod_Tip"]== 23) ][["Comune_descrizione","Compr","Loc","Compr_min","Loc_min"]].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
+dfCc=df[(df["Cod_Tip"]== 5) | (df["Cod_Tip"]== 9) | (df["Cod_Tip"]== 17) | (df["Cod_Tip"]== 23) ][["Comune_descrizione","Compr","Loc","Compr_min","Loc_min"]].groupby("Comune_descrizione").mean().reset_index()
 dfCc.rename(columns={"Compr": "ComprC","Loc": "LocC"},inplace=True)
 
 dfTc=df[(df["Cod_Tip"]== 6) | (df["Cod_Tip"]== 18) ][["Comune_descrizione","Compr","Loc","Compr_min","Loc_min"]].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
@@ -139,9 +131,6 @@ dfTc.rename(columns={"Compr": "ComprT","Loc": "LocT"},inplace=True)
 dfPc=df[(df["Cod_Tip"]== 8) | (df["Cod_Tip"]== 7) | (df["Cod_Tip"]== 10) ][["Comune_descrizione","Compr","Loc","Compr_min","Loc_min"]].groupby("Comune_descrizione").mean("Compr,Loc").reset_index()
 dfPc.rename(columns={"Compr": "ComprP","Loc": "LocP"},inplace=True)
 
-dfTIc=pd.merge(dfRc,dfCc,on="Comune_descrizione",how="inner")
-dfTIc=pd.merge(dfTIc,dfTc,on="Comune_descrizione",how="inner")
-dfTIc=pd.merge(dfTIc,dfPc,on="Comune_descrizione",how="inner")
 
 
 ## COMUNE non diviso
