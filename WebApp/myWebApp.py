@@ -140,7 +140,7 @@ Commtot=Commtot.drop(columns=["Cod_Tip"])
 
 
 ### Layout Dash app
-app = Dash(__name__, external_stylesheets=[])
+app = Dash(__name__)
 server = app.server
 
 div_style = {
@@ -769,8 +769,8 @@ def display_BarPlot(clickData,Comm,scelta):
                 showlegend=True) 
     return "Comune di: " + Comu,fig4,fig5
 
-
-app.run_server(debug=False)
+if __name__ == "__main__":
+    app.run_server(debug=False)
 
 
 
