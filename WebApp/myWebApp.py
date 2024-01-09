@@ -141,7 +141,7 @@ Commtot=Commtot.drop(columns=["Cod_Tip"])
 
 ### Layout Dash app
 app = Dash(__name__, external_stylesheets=[])
-
+app.title = 'Italy Estate'
 div_style = {
     'backgroundColor': '#f2f2f2',  # Grigio
     'borderRadius': '15px',  # Bordi arrotondati
