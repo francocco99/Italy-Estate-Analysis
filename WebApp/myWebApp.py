@@ -187,16 +187,17 @@ app.layout =html.Div([
     html.H1('Analisi prezzi degli Immobili',style={ 'text-align': 'center'}),
     html.Div(div_content),
     html.H1('Prezzi degli Immobili',style={ 'text-align': 'center'}),
+    html.H3('Seleziona il tipo di Dato:',style={ 'text-align': 'center'}),
      dcc.RadioItems(
         id='sceltaMappa', 
         options=[
         {'label': 'Compravendita', 'value': 'cmp'},
         {'label': 'Locazione', 'value': 'loc'}],
         value="cmp",
-        style={ 'text-align': 'center',"margin-top": "50px"},
+        style={ 'text-align': 'center',"margin-top": "20px"},
         inline=True
     ),
-    html.H2('Seleziona il tipo di Edificio:',style={ 'text-align': 'center'}),
+    html.H3('Seleziona il tipo di Edificio:',style={ 'text-align': 'center'}),
     dcc.RadioItems(
         id='Tipo', 
         options=[{'label': 'Tutti', 'value': 'Tutti'},
@@ -210,8 +211,9 @@ app.layout =html.Div([
     ),
    # html.Button('Reset', id='btn-Reset', n_clicks=0,className="button3"),
     dcc.Graph(id='graph2'),
-    html.P("Seleziona la Regione",style={ 'text-align': 'center'}),
+    html.H3("Seleziona la Regione",style={ 'text-align': 'center'}),
     dcc.Dropdown(options=regions, value='ABRUZZO', id='Reg'),
+    html.H3('Seleziona il tipo di Dato:',style={ 'text-align': 'center'}),
     dcc.RadioItems(
         id='scelta', 
         options=[
@@ -237,7 +239,6 @@ app.layout =html.Div([
                 style={ 'text-align': 'center',"margin-bottom": "40px"},
                 inline=True
             ),
-            #html.H2(id="ZonaStamp",style={'font-family': 'sans-serif','text-align': 'center'}),
             dcc.Graph(id='graph')
         ], className="six columns",style={'width': '48%', 'display': 'inline-block', 'padding': '1%'}),
         html.Div([
@@ -267,7 +268,7 @@ app.layout =html.Div([
     ], className="row"),
     html.H2('Comuni',style={'text-align': 'center'}),
     dcc.Graph(id="graph4"),
-    html.P("Seleziona il comune",style={'text-align': 'center'}),
+    html.H3("Seleziona il comune",style={'text-align': 'center'}),
     dcc.Dropdown(id='CommD',value="ABBATEGGIO"),
     html.H2(id="Com",style={'text-align': 'center'}),
     dcc.Tabs(id="table-2",value="table-dot",children=[
@@ -764,9 +765,9 @@ def display_BarPlot(clickData,Comm,scelta):
     ) for element, interval in zip(x, y)    
     ])
     fig5.update_layout(
-                xaxis=dict(title='Prezzo medio al (m²)',ticksuffix='€'),
+                xaxis=dict(title='Prezzo minimo e massimo medio al (m²)',ticksuffix='€'),
                 yaxis=dict(title='Tipo di Immobile'),
-                showlegend=True) 
+                showlegend=True,title="Prezzo minimo e massimo medio immobili del Comune di "+Comu) 
     return "Comune di: " + Comu,fig4,fig5
 
 if __name__ == "__main__":
