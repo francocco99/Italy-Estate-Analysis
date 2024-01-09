@@ -769,7 +769,8 @@ def display_BarPlot(clickData,Comm,scelta):
     return "Comune di: " + Comu,fig4,fig5
 
 
-app.run_server(port=8052)
+if __name__ == "__main__":
+    app.run_server(debug=False,port=8052)
 
 
 
