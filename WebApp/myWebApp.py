@@ -5,16 +5,16 @@ import json
 import plotly.graph_objects as go
 
 # Reading the dataset and the Maps geojson
-df=pd.read_csv('../Valori.csv',sep=';',skiprows=1)
+df=pd.read_csv('../Dataset/Valori.csv',sep=';',skiprows=1)
 
-with open("../italy-with-regions_1458.geojson") as f:
+with open("../Dataset/italy-with-regions_1458.geojson") as f:
     gj = json.load(f)
 features = gj['features']
 
-with open("../province-italia.json") as f:
+with open("../Dataset/province-italia.json") as f:
     pI = json.load(f)
 
-with open("../limits_IT_provinces.geojson") as f:
+with open("../Dataset/limits_IT_provinces.geojson") as f:
     gprov = json.load(f)
 
 # Used for the province map
@@ -46,19 +46,17 @@ df["Compr_max"]=df["Compr_max"].fillna(0)
 df["Loc_min"]=df["Loc_min"].fillna(0)
 df["Loc_max"]=df["Loc_max"].fillna(0)
 
-
-
-### Divided by Regiom PER REGIONE
+# usefull update for create the map
 df.loc[df["Regione"]=="VALLE D'AOSTA/VALLE`E D'AOSTE","Regione"]="VALLE D'AOSTA"
 df.loc[df["Regione"]=="TRENTINO-ALTO ADIGE","Regione"]="TRENTINO-ALTO ADIGE/SUDTIROL"
 df.loc[df["Regione"]=="FRIULI-VENEZIA GIULIA","Regione"]="FRIULI VENEZIA GIULIA"
 dfcom=df.copy()
-#df.drop(['Compr_min','Loc_min'],axis=1,inplace=True)
+
 df.rename(columns={"Compr_max": "Compr","Loc_max": "Loc"},inplace=True)
 
 
 regions=df["Regione"].unique().tolist()
-# regionsMap is used for create the chroplet map 
+# regionsMap is a list used for create the chroplet map 
 regionsMap= ['Piemonte', 'Trentino-alto adige/sudtirol', 'Lombardia', 'Puglia', 'Basilicata', 
            'Friuli venezia giulia', 'Liguria', "Valle d'aosta", 'Emilia-romagna',
            'Molise', 'Lazio', 'Veneto', 'Sardegna', 'Sicilia', 'Abruzzo',
@@ -66,8 +64,8 @@ regionsMap= ['Piemonte', 'Trentino-alto adige/sudtirol', 'Lombardia', 'Puglia', 
 regions.sort()
 regionsMap.sort()
 
-### DIVISO PER REGIONE 
 
+### Divided by Region
 dfRegion=df.groupby("Regione")[["Compr","Loc"]].mean().reset_index()
 dfRegionUp=dfRegion.copy()
 dfRegion["Regione"]=regionsMap
@@ -156,10 +154,10 @@ div_style = {
 div_content = html.Div(
     [
         html.H3('Dataset OMI(Osservatorio sul mercato Immobiliare)',style={'font-family':'Trebuchet MS'}),
-        html.P(["il Dataset contiene i dati relativi alle quotazioni immobiliari del secondo semestre del 2022. "
-               "Per ogni zona territoriale delimitata di ciascun comune ",html.Span("(Zona OMI)",style={'fontWeight': 'bold'}),
+        html.P(["il Dataset contiene i dati relativi alle quotazioni immobiliari del secondo semestre del 2022, "
+               "per ogni zona territoriale delimitata di ciascun comune ",html.Span("(Zona OMI)",style={'fontWeight': 'bold'}),
                ". Le quotazioni OMI, disponibili in un semestre, sono relative ai comuni censiti negli archivi catastali, le quotazioni OMI non possono intendersi sostitutive della stima puntuale, in quanto forniscono indicazioni di valore di larga massima"
-               ", per ogni comune ci sono diverse informazioni:",
+               ". Per ogni comune ci sono diverse informazioni:",
             html.Ul([
             html.Li([html.B("Area_territoriale: "), "Area territoriale in cui si trova l'immobile"]),
             html.Li([html.Span("Regione: ",style={'fontWeight': 'bold'}),"Regione in cui si trova l'immobile"]),
@@ -171,8 +169,8 @@ div_content = html.Div(
             html.Li([html.Span("Fascia: ",style={'fontWeight': 'bold'}),"Una lettera che indica in quale fascia si trova l'immobile, tra fascia Centrale, Semicentrale, Periferica , Sub Urbana, Extra Urbana"]),
             html.Li(html.Span("Zona: ",style={'fontWeight': 'bold'}),"Identifica una zona precisa all'interno della fascia"),
             html.Li([html.Span("Cod_Tip: ",style={'fontWeight': 'bold'}),"Codice univoco che corrisponde ad un certo tipo d'immobile"]),
-            html.Li([html.Span("Descr_Tipologia: ",style={'fontWeight': 'bold'}),"Tipo dell'immobile preso in considerazione"]),
-            html.Li([html.Span("Stato: ",style={'fontWeight': 'bold'}),"Stato di conservazione dell'immobile: Normale, Ottimo e"]),
+            html.Li([html.Span("Descr_Tipologia: ",style={'fontWeight': 'bold'}),"Descrizione del tipo dell'immobile preso in considerazione"]),
+            html.Li([html.Span("Stato: ",style={'fontWeight': 'bold'}),"Stato di conservazione dell'immobile: Normale, Ottimo e Scadente"]),
             html.Li([html.Span("Compr_max & Compr_min: ",style={'fontWeight': 'bold'}),"intervallo massimo/minimo, per unità di superficie in euro a metro quadro per l'acquisto dell'immobile"]),
             html.Li([html.Span("Sup_NL_compr: ",style={'fontWeight': 'bold'}),"Superficie Lorda (L) o Netta (N) su cui viene calcolato il costo per l'acquisto dell'immobile"]),
             html.Li([html.Span("Loc_max & Loc_min: ",style={'fontWeight': 'bold'}),"intervallo massimo/minimo, per unità di superficie in euro a metro quadro per l'affitto dell'immobile" ]),
@@ -338,8 +336,6 @@ def display_choropleth(clickData,Tipo,scelta):
                               selected=dict(marker=dict(opacity=0.8)))
         
     return figm
-
-
 
 
 
@@ -651,7 +647,6 @@ def displayGraph(clickData,Reg,scelta):
         fig3 = px.scatter(Comm,x="Loc_max",y="Comune_descrizione",color="Prov",labels={"Prov":"Province"})
         xreg=dfRegionUp[dfRegionUp["Regione"]==Region2]["Loc"].item()
     
-    # fig3.update_yaxes(showticklabels=False)
     fig3.add_vline(x=xreg, line_width=3, line_dash="dash", line_color="blue",annotation_text="Media Regionale: "+str(round(xreg,2)) +"€")
     fig3.update_xaxes(ticksuffix="€")
     fig3.update_layout(title="Prezzo degli Immobili per i Comuni della Regione "+Region,xaxis=dict(title='Prezzo medio al (m²)'),yaxis=dict(title='Comuni'),height=700)
@@ -746,7 +741,6 @@ def display_BarPlot(clickData,Comm,scelta):
             x=x, y=y,
             text=y,
             textposition='auto',
-            #marker_color=colors
         )])
     # Change the bar mode
     fig4.update_layout(barmode='group',xaxis=dict(title='Tipo di Immobile'),yaxis=dict(title='Prezzo medio al (m²)'),title="Immobili del Comune di "+Comu)
