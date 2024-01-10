@@ -22,6 +22,8 @@ dfPV = pd.json_normalize(pI, meta=['nome','sigla','regione'])
 dfPV.drop(columns=['regione'],inplace=True)
 dfPV.columns = ['name', 'Prov']
 df["Prov"].fillna("NA",inplace=True)
+df.loc[df["Prov"]=="FO","Prov"]="FC"
+df.loc[df["Prov"]=="PS","Prov"]="PU"
 df=pd.merge(df,dfPV,on='Prov')
 df.drop(columns=['Prov'],inplace=True)
 df = df.rename(columns={'name': 'Prov'})
@@ -50,6 +52,7 @@ df["Loc_max"]=df["Loc_max"].fillna(0)
 df.loc[df["Regione"]=="VALLE D'AOSTA/VALLE`E D'AOSTE","Regione"]="VALLE D'AOSTA"
 df.loc[df["Regione"]=="TRENTINO-ALTO ADIGE","Regione"]="TRENTINO-ALTO ADIGE/SUDTIROL"
 df.loc[df["Regione"]=="FRIULI-VENEZIA GIULIA","Regione"]="FRIULI VENEZIA GIULIA"
+
 dfcom=df.copy()
 
 df.rename(columns={"Compr_max": "Compr","Loc_max": "Loc"},inplace=True)
@@ -607,7 +610,7 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
             featureidkey="properties.prov_name",
             colorscale ="Blues",
             colorbar_tickprefix = '€',
-            colorbar_title = 'Prezzo Medio<br>Compravendita  €',
+            colorbar_title = 'Prezzo Medio<br>Compravendita al (m²) €',
         ))
     else:
         # Chroplet map Province della Regione selezionata
@@ -619,7 +622,7 @@ def display_BarPlot2(scelta,clickData,Reg,sezR,sezP):
             featureidkey="properties.prov_name",
             colorscale ="Blues",
             colorbar_tickprefix = '€',
-            colorbar_title = 'Prezzo Medio<br> Locazione  €',
+            colorbar_title = 'Prezzo Medio<br> Locazione al (m²) €',
         ))
 
     mappa.update_geos(fitbounds="locations", visible=False,center=None, projection_scale=3)
@@ -697,7 +700,7 @@ def display_BarPlot(clickData,Comm,scelta):
     else:
         Comu=clickData["points"][0]['y'].upper()
         OldClick3=clickData["points"][0]['y'].upper()
-   
+    Prov=ListaComm[ListaComm["Comune_descrizione"]==Comu]["Prov"].item()
     x=["Residenziale","Commerciale","Terziario", "Produttivo"]
     if scelta=="cmp":
         title="Prezzo medio Compravendita immobili comune di "
@@ -763,7 +766,7 @@ def display_BarPlot(clickData,Comm,scelta):
             textposition='auto',
         )])
     # Change the bar mode
-    fig4.update_layout(barmode='group',xaxis=dict(title='Tipo di Immobile'),yaxis=dict(title='Prezzo medio al (m²)'),title=title +Comu)
+    fig4.update_layout(barmode='group',xaxis=dict(title='Tipo di Immobile'),yaxis=dict(title='Prezzo medio al (m²)'),title=title +Comu + " in prov. di "+ Prov)
     fig4.update_traces(texttemplate='%{text:.2s}€', textposition='inside') 
     
     x=["Residenziale","Commerciale","Terziario", "Produttivo"]
@@ -786,7 +789,7 @@ def display_BarPlot(clickData,Comm,scelta):
     fig5.update_layout(
                 xaxis=dict(title='Prezzo minimo e massimo medio al (m²)',ticksuffix='€'),
                 yaxis=dict(title='Tipo di Immobile'),
-                showlegend=True,title="Prezzo minimo e massimo medio immobili del Comune di "+Comu) 
+                showlegend=True,title="Prezzo minimo e massimo medio immobili del Comune di "+Comu + " in prov. di "+ Prov) 
     return "Comune di: " + Comu,fig4,fig5
 
 if __name__ == "__main__":
